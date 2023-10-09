@@ -1,0 +1,322 @@
+---
+title: "Longitudinal"
+subtitle: "(non linear) Longitudinal model"
+execute:
+  warning: false
+format:
+  html:
+    toc: true
+---
+
+
+```{julia}
+#| include: false
+using Pkg
+Pkg.activate(".")
+Pkg.instantiate()
+```
+
+
+# Lontitudinal models
+
+Here we will show an example of a non-linear longitudinal models. In particular we are interested in mixed effects models (for modeling patient data) and mechanist models.
+
+Load Some general packages
+```{julia}
+using Turing, Distributions, StatsPlots
+```
+
+
+Load orange dataset from a CSV file
+
+```{julia}
+using CSV, DataFrames
+url = "https://raw.githubusercontent.com/vincentarelbundock/Rdatasets/master/csv/datasets/Orange.csv"
+temp = download(url)
+csv_file = CSV.File(temp)
+orange = DataFrame(csv_file)
+```
+We can plot the longitudinal developments of the different trees.
+
+```{julia}
+trees = groupby(orange, :Tree)
+
+p = plot()
+for tree in trees
+    plot!(p, tree.age, tree.circumference, label = "Tree $(tree.Tree[1])")
+end
+plot!(p, xlabel = "Age", ylabel = "Circumference")
+```
+
+Now we can formulate a model (based on @Pinheiro1995 and @Comets2017)
+$$
+f_\lambda(x) = \frac{\lambda_1}{1 + \exp( -\frac{x-\lambda_2}{\lambda_3})}
+$$ 
+in Julia we write
+```{julia}
+pinheiro(x,λ) = λ[1] / (1 + exp(-(x-λ[2])/λ[3]))
+```
+
+Additionaly we take assumption that only the intercept $\lambda_1$ varies between different trees. For example we formulate the model
+
+```{julia}
+@model function tree_model(y_age, y_circumference, y_tree ,μ = [200,800,400])
+    σ ~ LogNormal(3)
+    ω2 ~ TruncatedNormal(1000,200,0,Inf)
+    λ_1 ~ filldist(Normal(μ[1],ω2[1]),5)
+    λ_2 ~ Normal(μ[2], 20)
+    λ_3 ~ Normal(μ[3], 20)
+
+    for id in 1:length(y_circumference)
+        tree_id = y_tree[id]
+        m = pinheiro(y_age[id], [λ_1[tree_id], λ_2, λ_3])
+        y_circumference[id] ~ Normal(m, σ^2)
+    end
+end
+o_ages, o_circumference, o_trees = orange.age, orange.circumference, orange.Tree
+model = tree_model(o_ages, o_circumference, o_trees)
+chn_orange = sample(model, NUTS(), 1000)
+```
+
+### Priors of complicated models
+To better understand the priors we can use the `DiagnosticHelper`.
+```{julia}
+using Random, ForwardDiff
+#| code-fold: true
+#| code-summary: "Disgnostic Helper"
+"""
+The elegance of this helper is that Turing does all the legwork for parsing the posterior samples and keeping an eye on any changes in the model. (This will be helpfull when we have individual parameters for the mixed effects of the longitudinal model)
+If you want to change the model you have to do minimal changes to the diagnostics to still get the same measurements.
+"""
+struct DiagnosticHelper <: ContinuousUnivariateDistribution
+    value::Real
+end
+
+function Distributions.rand(rng::AbstractRNG, dist::DiagnosticHelper)
+    if typeof(dist.value) <: ForwardDiff.Dual
+        return dist.value.value
+    end
+    return dist.value
+end
+
+function Distributions.logpdf(dist::DiagnosticHelper, t::Real)
+    return -0.0001
+end
+
+Distributions.minimum(dist::DiagnosticHelper) = Inf
+Distributions.maximum(dist::DiagnosticHelper) = -Inf
+```
+
+Here my idea is that conceptually you can define priors, but with nonlinear models and complex mechanist models it is hard to understand what this prior actually means. This should be graphic aid for developing a sensible prior.
+```{julia}
+@model function tree_priors(y_age, y_circumference, y_tree, μ = [200,800,400])
+    σ ~ LogNormal(3)
+    ω2 ~ TruncatedNormal(1000,200,0,Inf)
+    λ_1 ~ filldist(Normal(μ[1],ω2[1]),5)
+    λ_2 ~ Normal(μ[2], 20)
+    λ_3 ~ Normal(μ[3], 20)
+
+    l = length(y_circumference)
+    M = zeros(l)
+    for id in 1:l
+        tree_id = y_tree[id]
+        m = pinheiro(y_age[id], [λ_1[tree_id], λ_2, λ_3])
+        M[id] = m
+    end
+    prior_pred ~ arraydist(DiagnosticHelper.(M))
+end
+priors_model = tree_priors(o_ages, o_circumference, o_trees)
+
+chn_pinheiro = sample(priors_model, Prior(), 1000)
+```
+Now we can showcase the model predictions based on the priors we have defined as a histogram.
+
+```{julia}
+df = DataFrame(chn_pinheiro)
+select!(df, r"prior_pred.*")
+prior_pred = reduce(vcat,eachcol(df))
+histogram(prior_pred)
+```
+
+This histogram describes what the model does on $1000$ samples of the prior. In this case it does not make sence for the predictions to be negative and we might want to change the priors to reflect that. But at least the order of magnitude seems to be similar to the observations.
+
+```{julia}
+histogram(o_circumference)
+```
+
+
+## Longitudinal Diagnostics
+
+First we will calculate residuals using the Turing framework. We save the individual predictions (IPRED) using the `DiagnosticHelper`.
+
+```{julia}
+
+@model function tree_pred_residuals(y_age, y_circumference, y_tree, μ = [200,800,400])
+    σ ~ LogNormal(3)
+    ω2 ~ TruncatedNormal(1000,200,0,Inf)
+    λ_1 ~ filldist(Normal(μ[1],ω2[1]),5)
+    λ_2 ~ Normal(μ[2], 20)
+    λ_3 ~ Normal(μ[3], 20)
+
+    l = length(y_circumference)
+    P = zeros(l)
+
+    for id in 1:l
+        tree_id = y_tree[id]
+        m = pinheiro(y_age[id], [λ_1[tree_id], λ_2, λ_3])
+        P[id] = m
+        y_circumference[id] ~ Normal(m, σ^2)
+    end
+    IPRED ~ arraydist(DiagnosticHelper.(P))
+end
+missing_circ =  Vector{Union{Missing, Float64}}(undef, size(orange, 1))
+pred_model = tree_pred_residuals(o_ages, missing_circ, o_trees)
+chn_pred = predict(pred_model, chn_orange)
+```
+
+Getting the IPRED values out of the chains object **without** casting to a DataFrame first.
+```{julia}
+# get is a Turing functionality
+ipred = get(chn_pred, :IPRED)
+# here we use collect to cast the named tuple into a Vector
+ipred_values = collect(ipred.IPRED)
+# broadcast mode (this works with tuples but plotting does not!!)
+IPRED_modes = mode.(ipred_values)
+```
+Plotting IPRED vs Obs
+
+```{julia}
+scatter(IPRED_modes, o_circumference,
+    label="Predictions",
+    xlabel="IPRED modes",
+    ylabel="obs"
+)
+plot!(identity, color=:black, linewidth = 2, label="Identity")
+```
+
+Calculating the residuals
+```{julia}
+IRES_modes = IPRED_modes .- o_circumference
+```
+
+Plotting IRES vs the age
+```{julia}
+using Loess
+# vs age
+scatter(orange.age, IRES_modes,
+    label="Prediction modes",
+    xlabel="Age",
+    ylabel="Residual"
+)
+x = sort(orange.age)
+plot!(x, predict(loess(orange.age, IRES_modes),x), label="loess")
+```
+Plotting the IRES per tree
+```{julia}
+# per tree
+scatter(orange.Tree, IRES_modes,
+    label="Prediction modes",
+    xlabel="Tree",
+    ylabel="Circumference"
+)
+x = sort(orange.Tree)
+scatter!(x, predict(loess(orange.Tree, IRES_modes),x), label="loess")
+```
+
+
+
+## Posterior Predictive Check
+
+For the posterior predictive check we can simulate the development according to the model and the posterior. Here we need to think the error model and how we want to include this. When we generate measurement values with turing with the same code as when sampling the posterior then Turing will sample (i.e. call `rand`) on the distribution on the RHS of the `~` syntax. This will include the error model we use.
+
+To have the actual measurements of the model based on the posterior there are two options. Either we use the `DiagnosticHelper` so save the model values similar to how we did it for examining the prior. Or we manually set the error to a very small number or even zero if possible. This will cause the distribution of the measurements to be a spike.
+
+The only difference we do compared to IPRED is that we will simulate values at other time points. For example we can choose $50$ timepoints in the range of $0$ to $1700$. This is achieved by giving these timepoints for `y_age` and accordingly many `y_circumference` per tree.
+
+```{julia}
+@model function tree_pred_residuals(y_age, y_circumference, y_tree, μ = [200,800,400])
+    σ ~ LogNormal(3)
+    ω2 ~ TruncatedNormal(1000,200,0,Inf)
+    λ_1 ~ filldist(Normal(μ[1],ω2[1]),5)
+    λ_2 ~ Normal(μ[2], 20)
+    λ_3 ~ Normal(μ[3], 20)
+
+    l = length(y_circumference)
+    P = zeros(l)
+
+    for id in 1:l
+        tree_id = y_tree[id]
+        m = pinheiro(y_age[id], [λ_1[tree_id], λ_2, λ_3])
+        P[id] = m
+        # Setting error to 0
+        y_circumference[id] ~ Normal(m, 0)
+    end
+    # saving with diarc distribution i.e. diagnostic helper
+    IPRED ~ arraydist(Dirac.(P))
+end
+tree_ids = unique(orange.Tree)
+ages = collect(range(0, 1700, length = 50))
+ppc_ages = repeat(ages, length(tree_ids))
+ppc_circ =  Vector{Union{Missing, Float64}}(undef, size(ppc_ages, 1))
+ppc_trees = reduce(vcat,fill.(tree_ids,length(ages)))
+ppc_model = tree_pred_residuals(ppc_ages, ppc_circ, ppc_trees)
+chn_ppc = predict(ppc_model, chn_orange)
+```
+
+Both the `IPRED` and `y_circumference` contain the same data.
+```{julia}
+test_df = DataFrame(chn_ppc)
+A = Matrix(select(test_df, r"IPRED"))
+B = Matrix(select(test_df, r"y_circumference"))
+using LinearAlgebra # standart library
+norm(A - B)
+```
+
+With these predictions we can plot the quantiles of the posterior distribution to give error bands. Let us create such ppc plot for each individual. This now depends greatly on the setup of the generated values- (specifically times `ages`, `ppc_ages` and trees `ppc_trees`) and thus cannot be done agnosticly of that. (Notice that this data actually is inside of `model_ppc`, thus it is possible to create a function for this plot using the chain output and model, but this needs naming conventions etc.!!)
+
+```{julia}
+# only select ipred values form chain
+chn_ipred = group(chn_ppc, :IPRED)
+ipred_quantiles = quantile(chn_ipred)
+quantiles_df = DataFrame(ipred_quantiles)
+tree_plots = []
+for tree in tree_ids
+    df_ids = ppc_trees .== tree
+    lower_q = quantiles_df[df_ids,2]
+    median_q = quantiles_df[df_ids,4]
+    upper_q = quantiles_df[df_ids,6]
+    lower_ribbon = median_q - lower_q
+    upper_ribbon = upper_q - median_q
+    
+    p = plot(ages, median_q,
+        ribbon = (lower_ribbon, upper_ribbon),
+        title = "Tree $tree",
+        xlabel = "age",
+        ylabel = "circumference",
+        legend=false
+    )
+    # braodcast .== gives bitvector
+    orange_ids = orange.Tree .== tree
+    scatter!(p,orange.age[orange_ids], orange.circumference[orange_ids],
+        markersize = 2,
+        color = :black
+        #label = "observations"
+    )
+    push!(tree_plots, p)
+end
+plot(tree_plots..., plot_title="individual longitudinal PPC", )
+```
+This plot shows for every tree the observations as well as the posterior descriptiveness of the model. To showcase the posterior predictions we plot a line for the median and a ribbon representing the $95\%$ quantiles of the posterior predictions.
+
+
+
+
+
+### does not contain the orange dataset....
+
+As a case example we will look at the `orange` dataset that can be found in `R`. Where we are going to use the `RDatasets.jl` package [docs](https://github.com/JuliaStats/RDatasets.jl) which contains datasets of many `R` packages as well as the `datasets` distributed with `R` itself (such as the `orange` dataset).
+
+using RDatasets
+orange = dataset("datasets", "orange")
+
+

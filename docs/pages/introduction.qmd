@@ -1,0 +1,72 @@
+---
+title: Introduction
+subtitle: Joint Models using `Turing.jl`
+---
+
+```{julia}
+#| include: false
+using Pkg
+Pkg.activate(".")
+Pkg.instantiate()
+```
+
+# Julia for Joint Models
+
+In the first two sections I describe how to implement a survival model and a longitudinal model seperatly. Alongside demonstrating how to generate model spesific diagnostics myself as well as showcasing diagnostics already awailable in the `Turing.jl` ecosystem. Finally I implement a Joint Model and different link functions according to @Kerioui2020 using the abstract type I have developed.
+
+My goal is that people who can write the mathematics of a Joint Model can translate it into code using my abstract type.
+
+
+
+# Setting up the enviroment
+
+To install julia visit https://julialang.org/downloads/ and download the latest release for your system. Click on the \[Help\] link next to your version for a guide. [Julia](https://github.com/JuliaLang/julia) is opensource and its documentation can be found [here](https://docs.julialang.org/en/v1/).
+
+To run the code from this website you also need to install certain Julia packages. Julia comes with its own package manager. Opening the julia repl by tying `julia` into your terminal we import the package manager and install the nececcary packages. To learn more about the packagemanager, enviroments and the package mode see [docs](https://pkgdocs.julialang.org/v1/)
+
+```
+> import Pkg
+> Pkg.add(["CSV", "DataFrames", "DifferentialEquations", "Distributions", "DynamicPPL", "ForwardDiff", "Integrals", "Loess", "LogExpFunctions", "ParetoSmooth", "RData", "RDatasets", "Random", "ReverseDiff", "Roots", "StatsPlots", "Survival", "Turing"])
+```
+
+All of these packages have their own documentation. The main package we need to learn is the `Turing` package.
+
+
+
+## VS Code
+Currently VScode is a popular integrated development enviroment. They have support for Julia check out this [link](https://code.visualstudio.com/docs/languages/julia)
+
+
+
+# `Turing.jl`
+
+`Turing.jl` is a framework for probabilitstic modelling in Julia. It prides
+itself in being more language-native, allowing a wide set of standard Julia
+features to be used seamlessly within models.
+
+_Using model from [Coin Flipping with
+Turing](https://turing.ml/dev/tutorials/00-introduction/#coin-flipping-with-turing)_
+
+```{julia}
+import ForwardDiff
+using Turing
+
+@model function coinflip(; N::Int)
+    p ~ Beta(1, 1)
+    y ~ filldist(Bernoulli(p), N)
+    return y
+end
+
+coinflip(y::AbstractVector{<:Real}) = coinflip(; N=length(y)) | (; y);
+
+model = coinflip(rand(100) .> 0.5)
+sampler = HMC(0.05, 10)
+
+sample(model, sampler, 1000; progress=false)
+```
+
+
+To learn more about Turing check out their [guide](https://turinglang.org/stable/docs/using-turing/guide) or example tutorials [tutorials](https://turinglang.org/stable/tutorials/00-introduction/).
+
+
+Additionaly for an extnsive dive check out [Bayesian Statistics using Julia and Turing](https://storopoli.io/Bayesian-Julia/) by José Eduardo Storopoli.

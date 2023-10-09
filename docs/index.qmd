@@ -1,0 +1,6 @@
+---
+---
+
+# Joint Modeling using Julia
+
+This website documents my findings and work concerning implementing Joint Models in Julia. In particual in the bayesian sampling framework `Turing` and its ecosystem.
