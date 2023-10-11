@@ -1,0 +1,869 @@
+---
+title: "Joint Models"
+subtitle: "Joint Models in Turing"
+execute:
+  warning: false
+format:
+  html:
+    toc: true
+---
+
+```{julia}
+#| include: false
+using Pkg
+Pkg.activate(".")
+Pkg.instantiate()
+```
+
+Load general packages
+```{julia}
+using Turing, Distributions, StatsPlots, CSV, DataFrames
+using LogExpFunctions: logit
+```
+
+# Build joint models
+As an example of how to implement Joint Models and use bayesian sampling to sample its posterior we will reconstruct a joint model defined in @Kerioui2020 which has a longitudinal model called SLD: sum of longest diameters. Here $\text{BSLD}\in \mathbb{R}$ is the baseline SLD at study start $t_x$. We have $\Psi = (\text{BSLD}, g, d, \varphi)$.
+
+$$
+\text{SLD}(t,\Psi) = \begin{cases}
+\text{BSLD}\exp(gt) & \text{if } t < t_x \\
+\text{BSLD}\exp(gt_x) \cdot [\varphi \exp(-d(t-t_x)) + (1-\varphi) \exp(g(t-t_x))] & \text{if } t \geq t_x
+\end{cases}
+$$
+
+In Julia we define
+
+
+```{julia}
+function sld(t, Ψ, tₓ = 0.0)
+    BSLD, g, d, ϕ = Ψ
+    Δt = t - tₓ
+    if t < tₓ
+        return BSLD * exp(g * t)
+    else
+        return BSLD * exp(g * tₓ) * (ϕ * exp(-d * Δt) + (1 - ϕ) * exp(g * Δt))
+    end
+end
+```
+
+For the survival model they define the joint model with the hazard
+$$
+h_i(t | \text{ SLD}(t,\Psi_i)) = h_0(t) \exp[\beta \times f(\text{SLD}(t,\Psi_i))].
+$$
+with a Weibull baseline hazard $h_0(t) = \frac{\kappa}{\lambda}(\frac{t}{\lambda})^{\kappa -1}$ and a link function $f$ that operates on the space that contains the SLD functions.
+
+Some examples of link functions are $id, \frac{d}{dt}$ or a link function that gives the TTG (time-to-growth)
+$$
+\text{TTG}(\Psi) = \max \left\{0, \frac{\log (\frac{d\cdot\varphi}{g(1-\varphi)})}{g+d} + t_x  \right\}
+$$
+Notice that $f$ is an operator that acts on a function space containing all the $\text{SLD}$ formulations. In the case of TTG we do not actually know how $f$ looks like, we only have the formulation of the image $f_{\text{TTG}}(\text{SLD}(t,\Psi)) = \text{TTG}(\Psi)$ of the $\text{SLD}$ function under $f_{\text{TTG}}$.
+
+
+### Example implementation of Joint Models
+
+We start with the same abstract type already introduced in the survival page.
+
+```{julia}
+#| code-fold: true
+#| code-summary: "Abstract Type: HazardBasedDistribution"
+
+using Integrals, DifferentialEquations, Random, Roots, Distributions
+
+
+abstract type HazardBasedDistribution <: ContinuousUnivariateDistribution end
+
+@doc raw"""
+represents ``h(t)``
+needs to be implemented for any `struct` that subtypes HazardBasedDistribution
+"""
+function hazard(dist::HazardBasedDistribution, t::Real) end
+
+@doc raw"""
+Different argument order to comply with sciml (Integration)
+"""
+sciml_hazard(t::Real, dist::HazardBasedDistribution) = hazard(dist, t)
+
+@doc raw"""
+calculates ``H(t) = \int_0^t h(u) \; du `` numerically with a Gauss-Konrad procedure
+"""
+function cumulative_hazard(dist::HazardBasedDistribution, t::Real)
+    # integrate from 0.0001 to $t$ (some hazards are not defined at 0)
+    ∫h = IntegralProblem(sciml_hazard ,1e-4 ,float(t) ,dist)
+    H = 0
+    try
+        H = solve(∫h, QuadGKJL())[1]
+    catch e
+        # ignore DomainErrors, can happen in initial sampling steps
+        if !isa(e,DomainError)
+            throw(e)
+        end
+    end
+    return H
+end
+
+@doc raw"""
+Calculation of the ccdf / survival function at time `t` based on the cumulative hazard ``S(t) = \exp(H(t)) = \exp(\int h(u) du)``
+"""
+function Distributions.logccdf(dist::HazardBasedDistribution, t::Real)
+    - cumulative_hazard(dist, t)
+end
+
+@doc raw"""
+Calculation of the log pdf function at time `t` based on the cumulative hazard ``\log f(t) = h(t)\cdot S(t) = \log h(t) - H(t)``
+"""
+function Distributions.logpdf(dist::HazardBasedDistribution, t::Real)
+    log(hazard(dist, t)) - cumulative_hazard(dist, t)
+end
+
+@doc raw"""
+Calculation of the pdf function at time `t` based on the log pdf
+"""
+function Distributions.pdf(dist::HazardBasedDistribution, t::Real)
+    exp(logpdf(dist, t))
+end
+
+
+
+H(nLogS, p, t) = sciml_hazard(t,p)
+@doc raw"""
+Generate a random sample ``t \sim \text{dist}``
+"""
+function Distributions.rand(rng::AbstractRNG, dist::HazardBasedDistribution)
+    num_end = 10_000
+    # calculate ode solution of $H(t) = \int_0^t h(u) \, du$
+    prob = ODEProblem(H ,0.0 ,(1e-4,num_end))
+    sol = solve(prob, Tsit5(); p=dist)
+    # calculate cdf $F(t)$, via survival $S(t)$
+    S(t) = exp(-sol(t))
+    F(t) = 1 - S(t)
+    # inverse sampling: find $t₀$ such that $F(t₀) = x₀$ where $x₀ \sim U(0,1)$
+    # via the root of $g(t) := F(t) - x₀$
+    x₀ = rand()
+    g(t) = F(t) - x₀
+    try
+        return find_zero(g,(1e-4, num_end)) 
+    catch e
+        return 0
+    end
+end
+
+Distributions.minimum(d::HazardBasedDistribution) = 0.
+Distributions.maximum(d::HazardBasedDistribution) = Inf
+```
+
+
+To make use of the distributions provided in the `Distributions` package I define the `hazard` for them computationaly with the `pdf` and survival `ccdf`.
+
+
+```{julia}
+#| code-fold: true
+#| code-summary: "hazard for distributions.jl"
+"""
+Calculates the hazard ``h(t) = f(t)/S(t)`` based on the formulations of `pdf` and the survival function `ccdf`.
+"""
+hazard(dist::ContinuousUnivariateDistribution, t::Real) = pdf(dist, t) / ccdf(dist, t)
+```
+
+
+With this code we can implement a simple joint model formulation:
+
+```{julia}
+struct SimpleJointModel <: HazardBasedDistribution
+    base_survival::ContinuousUnivariateDistribution
+    β::Real
+    link::Function # function of time
+end
+```
+In this formulation the struct contains a baseline survival distribution, the link coefficient $\beta$ and a function `link(t)` that should represent $t \mapsto f(\text{SLD}(t,\Psi_i))$.
+
+
+
+The JointModel `hazard` for `SimpleJointModel` we formulate in Julia as
+```{julia}
+
+h₀(d::SimpleJointModel, t::Real) = hazard(d.base_survival, t)
+
+function hazard(d::SimpleJointModel, t::Real)
+    link_val = d.link(t)
+    # prevents infinity calculations
+    exp_val = minimum([d.β * link_val,700])
+    return h₀(d, t) * exp(exp_val)
+end
+```
+Notice the recursiveness of this formulation:
+> The `hazard` function of a `SimpleJointModel` calls the `hazard` of `baseline_survival`. If the `baseline_survival` is a distribution from `Distributions.jl` (e.g. `Weibull`) then we use the formulation above with the `ccdf` and `pdf`. But we can also give another `SimpleJointModel` as `baseline_survvial` which then extends the final hazard formulation adding exponentials with links multiplicatively. Therefore this formulation is already capable of containing multiple links to the same or to different longitudinal models.
+
+
+With these three codeblocks describing the `sld`, `struct SimpleJointModel` and the `hazard` we have the joint model implemented. The `SimpleJointModel` is ready to be used in `Turing` for posterior sampling. Turing will use the logic I provide in `HazardBasedDistribution`.
+
+<details>
+<summary>Numerical Troubles</summary>
+Notice that in the joint model formulation the hazard has an exponential $\exp(\beta \cdot f(\text{SLD}(t)))$. For 64-Bit floats this will become a problem as soon as the exponential becomes greater than about 700.
+
+```{julia}
+exp(709)
+```
+```{julia}
+exp(710)
+```
+
+This is simply a numerical problem. Mathematically we would assume that the $\beta$ cancels out the link contribution. But for bayesian sampling we choose the parameters of the longitudinal model $\text{SLD}$ and $\beta$ at "random" (according to the sampling algorithm). Thus we need to provide a numerical bounds check for this link. In the next section we will look at what values the the longitudinal model produces and see this issue reapearing.
+
+
+When sampling the posterior these bayesian algorithms start with the prior. This leads to problems when integrating the hazard with out custom distribution. Therefore I have also implemented a `try` & `catch` statement around the integration of the cumulative hazard.
+
+</details>
+
+# Sampling in Turing
+We will use simulated data by @Kerioui2020 as well as their setup for the priors.
+
+```{julia}
+file_path = joinpath(@__DIR__, "../data/Simulated_Dataset.txt")
+file = CSV.File(file_path)
+df = DataFrame(file)
+# longitudinal data
+longit_id = df.ID
+longit_time = df.Time
+longit_sld = df.SLD
+# survival data
+surv_id = unique(df.ID)
+row_first_entry = [findfirst(x -> x == n, df.ID) for n in surv_id]
+surv_time = df[row_first_entry, :T]
+surv_indicator = df[row_first_entry, :delta]
+df
+```
+
+In the paper @Kerioui2020 there is also a description of how the individual $\Psi_i$ are build. They are formulated with a population vector $\mu = \{\mu_{\text{BSLD}}, \mu_d, \mu_g, \mu_\varphi\}$ and individual random effects vectors $\eta_i = \{\eta_{\text{BSLD},i}, \eta_{d,i}, \eta_{g,i}, \eta_{\varphi,i}\}$, which are normalli distributed around zero $\eta_i \sim \mathcal{N}(0,\Omega)$ with $\Omega = \text{diag}(\omega^2_{BSLD},\omega^2_d,\omega^2_g, \omega^2_\varphi)$.
+
+For biological constraints the parameters were transformed such that $\tau_q(\Psi_{q,i}) = \tau_q{\mu_q} + \eta_{q,i}$ for  $q\in\{{\text{BSLD},d,g,\varphi}\}$. They assumed log-normal transformations for BSLD,$d$,$g$ ($\tau = \log$) and logit-normal for $\varphi$ ($\tau = \text{logit}$).
+
+All this is important to build the prior. Let us start with only considering the longitudinal model. First we quickly analyze the priors. 
+
+I wrap the `sld` function with a bound to avoid numerical explosions.
+
+```{julia}
+function sld_wrap(μ,ηᵢ,tₓ)
+    val = sld(μ,ηᵢ,tₓ)
+    if isnan(val)
+        return 0.
+    end
+    return min(1e4,sld(μ,ηᵢ,tₓ))
+end
+```
+
+To choose the specific priors we refere to @Kerioui2020.  
+
+```{julia}
+@model function longitudinal_prior(longit_id, longit_measurement, longit_time, surv_ids, surv_time, surv_indicator)
+    # treatment at study star
+    tₓ = 0.0   
+    # number of longitudinal and survival measurements
+    n = length(surv_ids)
+    m = length(longit_id)
+
+    ## priors longitudinal
+    # μ priors, population parameters
+    μ_BSLD ~ LogNormal(3.5,1)
+    μ_d ~ Beta(1,100)
+    μ_g ~ Beta(1,100)
+    μ_ϕ ~ Beta(2,4)
+    μ = (BSLD = μ_BSLD, d = μ_d, g = μ_g, ϕ = μ_ϕ)
+    # ω priors, mixed/individual effects
+    ω_BSLD ~ LogNormal(0,1)
+    ω_d ~ LogNormal(0,1)
+    ω_g ~ LogNormal(0,1)
+    ω_ϕ ~ LogNormal(0,1)
+    Ω = (BSLD = ω_BSLD^2, d = ω_d^2, g = ω_g^2, ϕ = ω_ϕ^2)
+    # multiplicative error
+    σ ~ LogNormal(0,1)
+    
+    
+    ## η describing the mixed effects of the population
+    η_BSLD ~ filldist(Normal(0,Ω.BSLD),n)
+    η_d ~ filldist(Normal(0,Ω.d),n)
+    η_g ~ filldist(Normal(0,Ω.g),n)
+    η_ϕ ~ filldist(Normal(0,Ω.ϕ),n)
+    η = [(BSLD=η_BSLD[i], d=η_d[i], g=η_g[i], ϕ=η_ϕ[i]) for i in 1:n]
+    # Transforms
+    Ψ = [[μ_BSLD * exp(η_BSLD[i]),
+          μ_g * exp(η_g[i]),
+          μ_d * exp(η_d[i]),
+          inverse(logit)(logit(μ_ϕ) + (η_ϕ[i]))]
+        for i in 1:n]
+
+    # Prior pred
+    P = [sld_wrap(longit_time[obs],Ψ[Int(longit_id[obs])], tₓ) for obs in 1:m]
+
+    prior_pred ~ arraydist(Dirac.(P))
+end
+prior_model = longitudinal_prior(longit_id, longit_sld, longit_time, surv_id, surv_time, surv_indicator)
+prior_chn = sample(prior_model, Prior(), 5000)
+```
+
+Analyze the prior predictions compared to obervations, here note the acumulation at $10000$ representing all the values greater than $10000$ because of the `wrap_sld`. 
+
+```{julia}
+histogram(longit_sld, normalize=:pdf, label="observations")
+prior_df = DataFrame(prior_chn)
+select!(prior_df, r"prior_pred.*")
+prior_pred = reduce(vcat,eachcol(prior_df))
+histogram!(prior_pred, normalize=:pdf, label="prior predictions")
+```
+
+The bump at $10000$ represents all measurements that are bigger than this. Therefore the posterior describes very large values. In particular even parameter combinations that make `sld` return `NaN`. This is also filtered out by `wrap_sld`. 
+
+Only showing the range $0$ to $1000$ it seems to do a good job.
+
+```{julia}
+xlims!((0,1000))
+```
+
+
+
+
+
+
+### Fitting Longitudinal part
+
+Setup `ReverseDiff.jl` automatic differentiation backend for faster computations, see [ad backend](https://turing.ml/v0.22/docs/using-turing/autodiff) and [reversediff.jl](https://juliadiff.org/ReverseDiff.jl/).
+```{julia}
+using ReverseDiff
+Turing.setadbackend(:reversediff)
+Turing.setrdcache(true)
+```
+
+Sampling the posterior of the longitudinal part. We set up the `NUTS` sampler with an acceptance rate of $0.9$ and a maximum depth of $8$. For `NaN` values we just set the `sld_prediction` to $0$.
+
+```{julia}
+@model function longitudinal_sld(longit_ids, longit_times, longit_measurements, surv_ids, surv_times, surv_event)
+    # treatment at study star
+    tₓ = 0.0   
+    # number of longitudinal and survival measurements
+    n = length(surv_ids)
+    m = length(longit_ids)
+
+    # ---------------- Priors -----------------
+
+    ## priors longitudinal
+    # μ priors, population parameters
+    μ_BSLD ~ LogNormal(3.5,1)
+    μ_d ~ Beta(1,100)
+    μ_g ~ Beta(1,100)
+    μ_ϕ ~ Beta(2,4)
+    μ = (BSLD = μ_BSLD, d = μ_d, g = μ_g, ϕ = μ_ϕ)
+    # ω priors, mixed/individual effects
+    ω_BSLD ~ LogNormal(0,1)
+    ω_d ~ LogNormal(0,1)
+    ω_g ~ LogNormal(0,1)
+    ω_ϕ ~ LogNormal(0,1)
+    Ω = (BSLD = ω_BSLD^2, d = ω_d^2, g = ω_g^2, ϕ = ω_ϕ^2)
+    # multiplicative error
+    σ ~ LogNormal(0,1)
+    
+    
+    ## η describing the mixed effects of the population
+    η_BSLD ~ filldist(Normal(0,Ω.BSLD),n)
+    η_d ~ filldist(Normal(0,Ω.d),n)
+    η_g ~ filldist(Normal(0,Ω.g),n)
+    η_ϕ ~ filldist(Normal(0,Ω.ϕ),n)
+    η = [(BSLD=η_BSLD[i], d=η_d[i], g=η_g[i], ϕ=η_ϕ[i]) for i in 1:n]
+    # Transforms
+    Ψ = [[μ_BSLD * exp(η_BSLD[i]),
+          μ_g * exp(η_g[i]),
+          μ_d * exp(η_d[i]),
+          inverse(logit)(logit(μ_ϕ) + (η_ϕ[i]))]
+        for i in 1:n]
+
+    # add the likelihood of the longitudinal process
+    for measurement in 1:m
+        id = Int(longit_ids[measurement])
+        meas_time = longit_times[measurement]
+        sld_prediction = sld(meas_time, Ψ[id], tₓ)
+        if isnan(sld_prediction) || sld_prediction < 0
+            sld_prediction = 0
+        end
+        longit_measurements[measurement] ~ Normal(sld_prediction, sld_prediction * σ)
+    end
+end
+
+longitudinal_model = longitudinal_sld(longit_id, longit_time, longit_sld, surv_id, surv_time, surv_indicator)
+longitudinal_chn = sample(longitudinal_model, NUTS(200, 0.9, max_depth = 8), 400)
+```
+
+
+
+### Fitting Survival part
+
+Only fitting the survival using a `SimpleJointModel` but with $\beta = 0$ and $\text{link}(t) = 0$.
+
+```{julia}
+@model function survival_sld(longit_ids, longit_times, longit_measurements, surv_ids, surv_times, surv_event)
+    # treatment at study star
+    tₓ = 0.0   
+    # number of longitudinal and survival measurements
+    n = length(surv_ids)
+    m = length(longit_ids)
+
+    # ---------------- Priors -----------------
+    ## priors survival
+    κ ~  truncated(LogNormal(0,1),0.8,1.2)
+    λ ~ LogNormal(5,1)
+    ## prior link
+    β = 0
+    
+    
+    # add the likelihood of the survival model with link
+    for individual in 1:n
+        id = Int(surv_ids[individual])
+        censoring = Bool(surv_event[id]) ? Inf : surv_times[id]
+        surv_times[individual] ~ censored(
+                            SimpleJointModel(Weibull(κ,λ),
+                            β,
+                            x -> 0 # zero function
+                        ), upper =  censoring)
+    end
+end
+survival_model = survival_sld(longit_id, longit_time, longit_sld, surv_id, surv_time, surv_indicator)
+survival_chn = sample(survival_model, NUTS(200, 0.9, max_depth = 8), 400)
+```
+
+Computation time: This can surely be improved with optimizations and logic changes. Let us quickly estimate the number of numerical integrations we solve. Per likelihood evaluation we solve $100$ integrals. From the chains output we can compute how many samples were generated by summing up the number of steps per sample that was generated (NUTS has a rejection component). Notice that we warmup is not included here so we multiply by $1.5$ (50% of sample size is warmup) to estimate it.
+
+```{julia}
+steps_per_sample = survival_chn[:n_steps]
+number_of_steps = sum(steps_per_sample)
+number_of_steps_with_warmup = number_of_steps * 1.5
+number_of_integrations = 100 * number_of_steps_with_warmup
+```
+This is quite a huge number of integrations, which we could reduce by globally solving the integal using the `DifferentialEquations.jl` package and then evaluating its solution with spesific parameter and time combinations later on.
+
+But also notice that the survival process was sampled faster than the longitdudinal process. This is because of the number of parameters: 2 for the survival vs 404 for the longitdudinal (4 population and 400 mixed effects).
+
+
+## Joint models with a link function / operator
+
+With both the longitudinal and survival models we can combine them and use a link function. This link function is dependent on the longitudinal model and influences the hazard of the survival model. Here we use the current `sld` value as the link function. We call this the identity link.
+
+Also we initialize parameters since the `NUTS` algorithms struggles to find initial values for the joint model (Particle Gibbs which allows to gorup parameters might help here).
+
+```{julia}
+n = 100
+init_params = (
+    μ_BSLD=60,μ_d=0.0055, μ_g=0.0015, μ_ϕ=0.2,
+    ω_BSLD=0.7 ,ω_d=1.0, ω_g=1.0 , ω_ϕ=1.5, σ=0.18,
+    κ = 1, λ=1450, β = 0,
+    η_BSLD=zeros(n) ,η_d=zeros(n), η_g=zeros(n) , η_ϕ=zeros(n),
+    )
+```
+
+
+```{julia}
+@model function identity_link(longit_ids, longit_times, longit_measurements, surv_ids, surv_times, surv_event)
+    # treatment at study star
+    tₓ = 0.0   
+    # number of longitudinal and survival measurements
+    n = length(surv_ids)
+    m = length(longit_ids)
+
+    # ---------------- Priors -----------------
+
+    ## priors longitudinal
+    # μ priors, population parameters
+    μ_BSLD ~ LogNormal(3.5,1)
+    μ_d ~ Beta(1,100)
+    μ_g ~ Beta(1,100)
+    μ_ϕ ~ Beta(2,4)
+    μ = (BSLD = μ_BSLD, d = μ_d, g = μ_g, ϕ = μ_ϕ)
+    # ω priors, mixed/individual effects
+    ω_BSLD ~ LogNormal(0,1)
+    ω_d ~ LogNormal(0,1)
+    ω_g ~ LogNormal(0,1)
+    ω_ϕ ~ LogNormal(0,1)
+    Ω = (BSLD = ω_BSLD^2, d = ω_d^2, g = ω_g^2, ϕ = ω_ϕ^2)
+    # multiplicative error
+    σ ~ LogNormal(0,1)
+    ## priors survival
+    #κ ~ LogNormal(0,1)
+    # some more prior knowledge on κ
+    κ ~  truncated(LogNormal(0,1),0.8,1.2)
+    λ ~ LogNormal(5,1)
+    ## prior joint model
+    #β ~ Normal(0,0.5)
+    # some more prior knowledge on β, can help with calculating individual hazard (computationally)
+    β ~ truncated(Normal(0,0.5),-0.1,0.1)
+    
+    
+    ## η describing the mixed effects of the population
+    η_BSLD ~ filldist(Normal(0,Ω.BSLD),n)
+    η_d ~ filldist(Normal(0,Ω.d),n)
+    η_g ~ filldist(Normal(0,Ω.g),n)
+    η_ϕ ~ filldist(Normal(0,Ω.ϕ),n)
+    η = [(BSLD=η_BSLD[i], d=η_d[i], g=η_g[i], ϕ=η_ϕ[i]) for i in 1:n]
+    # Transforms
+    Ψ = [[μ_BSLD * exp(η_BSLD[i]),
+          μ_g * exp(η_g[i]),
+          μ_d * exp(η_d[i]),
+          inverse(logit)(logit(μ_ϕ) + (η_ϕ[i]))]
+        for i in 1:n]
+
+    # add the likelihood of the longitudinal process
+    for measurement in 1:m
+        id = Int(longit_ids[measurement])
+        meas_time = longit_times[measurement]
+        sld_prediction = sld(meas_time, Ψ[id], tₓ)
+        if isnan(sld_prediction) || sld_prediction < 0
+            sld_prediction = 0
+        end
+        longit_measurements[measurement] ~ Normal(sld_prediction, sld_prediction * σ)
+    end
+    
+    # add the likelihood of the survival model with link
+    for individual in 1:n
+        id = Int(surv_ids[individual])
+        id_link(t) = sld(t, Ψ[id], tₓ)
+        censoring = Bool(surv_event[id]) ? Inf : surv_times[id]
+        surv_times[individual] ~ censored(SimpleJointModel(Weibull(κ,λ), β, id_link), upper =  censoring)
+    end
+end
+
+identity_link_model = identity_link(longit_id, longit_time, longit_sld, surv_id, surv_time, surv_indicator)
+identity_link_chn = sample(identity_link_model, NUTS(100, 0.9, max_depth = 8), 200, init_params=init_params)
+```
+
+
+Other common link functions in @Kerioui2020 are the time to growth TTG and the derivative $\frac{d}{dt}$. In Julia we define:
+
+```{julia}
+function TTG(Ψ, tₓ = 0)
+    BSLD, g, d, ϕ = Ψ
+    val = log((d*ϕ)/(g*(1-ϕ)))/(g+d) + tₓ
+    return maximum((0,val))
+end
+```
+
+This lets us use the link function `ttg_link(t) = TTG(Ψ)`. Notice that `ttg_link` is a constant function in time. But in the `SimpleJointModel` definition we specifically ask for a function in time (this can be designed differently).
+
+Putting this into the Turing model.
+
+```{julia}
+@model function ttg_link(longit_ids, longit_times, longit_measurements, surv_ids, surv_times, surv_event)
+    # treatment at study star
+    tₓ = 0.0   
+    # number of longitudinal and survival measurements
+    n = length(surv_ids)
+    m = length(longit_ids)
+
+    # ---------------- Priors -----------------
+
+    ## priors longitudinal
+    # μ priors, population parameters
+    μ_BSLD ~ LogNormal(3.5,1)
+    μ_d ~ Beta(1,100)
+    μ_g ~ Beta(1,100)
+    μ_ϕ ~ Beta(2,4)
+    μ = (BSLD = μ_BSLD, d = μ_d, g = μ_g, ϕ = μ_ϕ)
+    # ω priors, mixed/individual effects
+    ω_BSLD ~ LogNormal(0,1)
+    ω_d ~ LogNormal(0,1)
+    ω_g ~ LogNormal(0,1)
+    ω_ϕ ~ LogNormal(0,1)
+    Ω = (BSLD = ω_BSLD^2, d = ω_d^2, g = ω_g^2, ϕ = ω_ϕ^2)
+    # multiplicative error
+    σ ~ LogNormal(0,1)
+    ## priors survival
+    #κ ~ LogNormal(0,1)
+    # some more prior knowledge on κ
+    κ ~  truncated(LogNormal(0,1),0.8,1.2)
+    λ ~ LogNormal(5,1)
+    ## prior joint model
+    #β ~ Normal(0,0.5)
+    # some more prior knowledge on β, can help with calculating individual hazard (computationally)
+    β ~ truncated(Normal(0,0.5),-0.1,0.1)
+    
+    
+    ## η describing the mixed effects of the population
+    η_BSLD ~ filldist(Normal(0,Ω.BSLD),n)
+    η_d ~ filldist(Normal(0,Ω.d),n)
+    η_g ~ filldist(Normal(0,Ω.g),n)
+    η_ϕ ~ filldist(Normal(0,Ω.ϕ),n)
+    η = [(BSLD=η_BSLD[i], d=η_d[i], g=η_g[i], ϕ=η_ϕ[i]) for i in 1:n]
+    # Transforms
+    Ψ = [[μ_BSLD * exp(η_BSLD[i]),
+          μ_g * exp(η_g[i]),
+          μ_d * exp(η_d[i]),
+          inverse(logit)(logit(μ_ϕ) + (η_ϕ[i]))]
+        for i in 1:n]
+
+    # add the likelihood of the longitudinal process
+    for measurement in 1:m
+        id = Int(longit_ids[measurement])
+        meas_time = longit_times[measurement]
+        sld_prediction = sld(meas_time, Ψ[id], tₓ)
+        if isnan(sld_prediction) || sld_prediction < 0
+            sld_prediction = 0
+        end
+        longit_measurements[measurement] ~ Normal(sld_prediction, sld_prediction * σ)
+    end
+    
+    # add the likelihood of the survival model with link
+    for individual in 1:n
+        id = Int(surv_ids[individual])
+        ttg_link(t) = TTG(Ψ[individual])
+        censoring = Bool(surv_event[id]) ? Inf : surv_times[id]
+        surv_times[individual] ~ censored(SimpleJointModel(Weibull(κ,λ), β, ttg_link), upper =  censoring)
+    end
+end
+ttg_link_model = ttg_link(longit_id, longit_time, longit_sld, surv_id, surv_time, surv_indicator)
+ttg_link_chn = sample(ttg_link_model, NUTS(100, 0.9, max_depth = 8), 200, init_params=init_params)
+```
+
+For the derivatives we can use any of Julias automatic differentiation libraries (here a list of a few dozen [julia diff](https://juliadiff.org/)). The strong support for automatic differentiation is central to the Julia ecosystem and a foundation of its design. Turing interacts with these automatic differentiation packages via the automatic differentiation backend mentioned at the top of this page.
+
+Here we are going to make use of automatic differentiation outselfs to calculate the derivative, specifically ForwardDiff.jl [docs](https://juliadiff.org/ForwardDiff.jl/stable/). This is the derivative link `derivative_link(t) = ForwardDiff.derivative(t -> sld(t, Ψ, tₓ), t)`.
+
+Quickly ilustrating how this works:
+```{julia}
+using ForwardDiff
+f(x) = x^2
+Dxf(x) = ForwardDiff.derivative(x ->f(x), x) # first derivative
+Dx2f(x) = ForwardDiff.derivative(x ->Dxf(x), x) # second derivative
+plot(f, label = "f", title="Derivatives")
+plot!(Dxf, label = "f'")
+plot!(Dx2f, label = "f''")
+```
+
+In Turing we write:
+```{julia}
+@model function derivative_link(longit_ids, longit_times, longit_measurements, surv_ids, surv_times, surv_event)
+    # treatment at study star
+    tₓ = 0.0   
+    # number of longitudinal and survival measurements
+    n = length(surv_ids)
+    m = length(longit_ids)
+
+    # ---------------- Priors -----------------
+
+    ## priors longitudinal
+    # μ priors, population parameters
+    μ_BSLD ~ LogNormal(3.5,1)
+    μ_d ~ Beta(1,100)
+    μ_g ~ Beta(1,100)
+    μ_ϕ ~ Beta(2,4)
+    μ = (BSLD = μ_BSLD, d = μ_d, g = μ_g, ϕ = μ_ϕ)
+    # ω priors, mixed/individual effects
+    ω_BSLD ~ LogNormal(0,1)
+    ω_d ~ LogNormal(0,1)
+    ω_g ~ LogNormal(0,1)
+    ω_ϕ ~ LogNormal(0,1)
+    Ω = (BSLD = ω_BSLD^2, d = ω_d^2, g = ω_g^2, ϕ = ω_ϕ^2)
+    # multiplicative error
+    σ ~ LogNormal(0,1)
+    ## priors survival
+    #κ ~ LogNormal(0,1)
+    # some more prior knowledge on κ
+    κ ~  truncated(LogNormal(0,1),0.8,1.2)
+    λ ~ LogNormal(5,1)
+    ## prior joint model
+    #β ~ Normal(0,0.5)
+    # some more prior knowledge on β, can help with calculating individual hazard (computationally)
+    β ~ truncated(Normal(0,0.5),-0.1,0.1)
+    
+    
+    ## η describing the mixed effects of the population
+    η_BSLD ~ filldist(Normal(0,Ω.BSLD),n)
+    η_d ~ filldist(Normal(0,Ω.d),n)
+    η_g ~ filldist(Normal(0,Ω.g),n)
+    η_ϕ ~ filldist(Normal(0,Ω.ϕ),n)
+    η = [(BSLD=η_BSLD[i], d=η_d[i], g=η_g[i], ϕ=η_ϕ[i]) for i in 1:n]
+    # Transforms
+    Ψ = [[μ_BSLD * exp(η_BSLD[i]),
+          μ_g * exp(η_g[i]),
+          μ_d * exp(η_d[i]),
+          inverse(logit)(logit(μ_ϕ) + (η_ϕ[i]))]
+        for i in 1:n]
+
+    # add the likelihood of the longitudinal process
+    for measurement in 1:m
+        id = Int(longit_ids[measurement])
+        meas_time = longit_times[measurement]
+        sld_prediction = sld(meas_time, Ψ[id], tₓ)
+        if isnan(sld_prediction) || sld_prediction < 0
+            sld_prediction = 0
+        end
+        longit_measurements[measurement] ~ Normal(sld_prediction, sld_prediction * σ)
+    end
+    
+    # add the likelihood of the survival model with link
+    for individual in 1:n
+        id = Int(surv_ids[individual])
+        derivative_link(t) = ForwardDiff.derivative(t -> sld(t, Ψ[individual], tₓ), t)
+        censoring = Bool(surv_event[id]) ? Inf : surv_times[id]
+        surv_times[individual] ~ censored(SimpleJointModel(Weibull(κ,λ), β, derivative_link), upper =  censoring)
+    end
+end
+
+derivative_link_model = derivative_link(longit_id, longit_time, longit_sld, surv_id, surv_time, surv_indicator)
+derivative_link_chn = sample(derivative_link_model, NUTS(100, 0.9, max_depth = 8), 200, init_params=init_params)
+```
+
+Comparing the chain results for parameters of interests (population, error, survival and link)
+
+```{julia}
+params = [:μ_BSLD, :μ_d, :μ_g, :μ_ϕ, :σ, :κ, :λ, :β]
+```
+Here is a table showing the values used to generate the simulated data provisded by @Kerioui2020.
+
+| Parameters (Unit) | Fixed Effects μ |
+| ----------------- | --------------- |
+| BSLD (mm)         | 60              |
+| d (day^-1)        | 0.0055          |
+| g (day^-1)        | 0.0015          |
+| φ                 | 0.2             |
+| σ                 | 0.18            |
+| κ                 | 1               |
+| λ (days)          | 1450            |
+| β (mm^-1)         | 0.01            |
+
+
+
+
+Identity link (true model / used to generate data)
+```{julia}
+summarize(identity_link_chn[params])
+```
+
+TTG link
+```{julia}
+summarize(ttg_link_chn[params])
+```
+
+Derivative link
+```{julia}
+summarize(derivative_link_chn[params])
+```
+
+No link:
+Longitudinal
+```{julia}
+summarize(longitudinal_chn[params[1:5]])
+```
+Survival
+```{julia}
+summarize(survival_chn[params[6:7]])
+```
+
+
+
+## Diagnostics
+
+The pages about survival and longitudinal models already describe a huge number of diagnostics and plots that are applicable here. You could try to implement them for this joint model as an excercise.
+
+Here I want to present a plot specifically for joint models / scenarios with longitudinal and survival data. For an individual $i$ we have the longitudinal measurements and a survival time with an event indicator. Suppose this individual has a censored event. We plot the joint model predictions of the longitudinal development as well as the survival starting from the censored time i.e. conditioned on surviving until the censored time. This allows to judge the connection of longitudinal development and survival outcome inside the joint model.
+
+One design decision I took throughout many of the diagnostics and plots is to use nonparametric plots to allow swapping the longitudinal model (sld formulation) or survival model (baseline hazard, link contribution) and use the same Turing `@model` to make the predictions necessary to generate the plot. Setting up the prediction model for individual 25 (first with censored event).
+
+
+```{julia}
+# data for individual
+individual = 25
+obs_for_individual = longit_id .== individual
+individual_obs = longit_sld[obs_for_individual]
+individual_time = longit_time[obs_for_individual]
+last_obs = individual_time[end]
+# timerange to sample
+timespan = (0, 1600)
+timesteps = 15
+
+r = range(timespan..., timesteps)
+sld_timepoints = sort(push!(collect(r),last_obs))
+
+m = length(sld_timepoints)
+sld_pred =  Vector{Union{Missing, Float64}}(undef, m)
+sld_id = fill(individual, m)
+# survival pred
+n = 100
+s_time = Vector{Union{Missing, Float64}}(undef, n)
+s_id = fill(individual, n)
+s_event = ones(n)
+
+pred_model = identity_link(sld_id, sld_timepoints, sld_pred, s_id, s_time, s_event)
+```
+
+Predict using zero $\sigma$
+
+```{julia}
+prediction_chn = predict(pred_model, identity_link_chn)
+```
+
+Plotting longitudinal PPC
+
+```{julia}
+chn_longit = group(prediction_chn, :longit_measurements)
+longit_quantiles = quantile(chn_longit)
+quantiles_df = DataFrame(longit_quantiles)
+
+lower_q = quantiles_df[!,2]
+median_q = quantiles_df[!,4]
+upper_q = quantiles_df[!,6]
+lower_ribbon = median_q - lower_q
+upper_ribbon = upper_q - median_q
+
+plot(sld_timepoints, quantiles_df[!, 4],
+    ribbon = (lower_ribbon, upper_ribbon),
+    title = "Individual $individual",
+    label = "SLD model",
+    xlabel = "Time",
+    ylabel = "SLD",
+    legend = :topleft,
+)
+
+scatter!(individual_time, individual_obs, label = "obs")
+vline!([last_obs], color = :black, linewidth = 1, label = false)
+```
+The line "SLD model" represents the median of the posterior predictions and the ribbon represents the 95% quantile.
+
+
+Now we can add a conditional survival prediction into this graph starting at the last observation.
+
+```{julia}
+using Survival
+
+""" 
+Functionality to work with non-parametric KaplanMeier estimators
+"""
+function npe(km_fit::KaplanMeier, t::Real)
+    time_points = km_fit.events.time
+    survival = km_fit.survival
+    if t <= time_points[1]
+        return 1
+    elseif t >= time_points[end]
+        return survival[end]
+    else
+        id = findfirst(x -> x >= t, time_points)
+        return survival[id]
+    end
+end
+
+
+chn_survival = group(prediction_chn, :surv_times)
+indicators = ones(100)
+surv_df = select!(DataFrame(chn_survival), Not(1:2))
+
+conditioned_measurements = [row[row .>= last_obs] for row in eachrow(Matrix(surv_df))]
+KM = [fit(KaplanMeier, row, indicators[1:length(row)]) for row in conditioned_measurements]
+p = [0.025, 0.5, 0.975]
+Q = [quantile([npe(km, time_point) for km in KM],p) for time_point in sld_timepoints]
+Q_mat = reduce(hcat,Q)
+surv_median = Q_mat[2,:]
+surv_rib = (surv_median - Q_mat[1,:], Q_mat[3,:] - surv_median)
+
+plot!(twinx(), sld_timepoints, surv_median,
+    label = "Overall Survival",
+    legend = :topright,
+    color = :green,
+    ribbon = surv_rib
+)
+```
+The line "Overall Survival" represents the median posterior overall survival conditioned to survival until the last observation and the band represent the 95% quantile. This has been calculated non parametrically with generating 100 events for all posterior samples then dropping all event prior to the last overservation. For each posterior sample a Kaplan Meier was calculated and the median and 95% quantile come from their overall survival.
+
+There is quite some work needed to generate this graph since we combine both the posterior predictive of the longitudinal and survival process. I want to highlight that since we are only using the posterior predictive this plot can be generated for arbitrary joint model formulation. Changing the baseline hazard, link function or longitudinal model does not change anything in the generation of the plot itself.

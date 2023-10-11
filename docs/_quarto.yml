@@ -1,0 +1,27 @@
+project:
+  type: website
+
+website:
+  title: "Julia Joint Models"
+  description: "A comprehensive overview of modelling workflows using Julia"
+  navbar:
+    left:
+      - text: Home
+        href: index.qmd
+      - about.qmd
+
+  sidebar:
+    pinned: true
+    contents:
+      - "pages/introduction.qmd"
+      - "pages/survival.qmd"
+      - "pages/longitudinal.qmd"
+      - "pages/joint_model.qmd"
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+
+bibliography: references.bib
