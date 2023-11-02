@@ -8,7 +8,7 @@ on:
 
 jobs:
   Test:
-    name: Julia ${{ matrix.version }} on ${{ matrix.os }}-${{ matrix.arch }} @ ${{ github.event_name }}
+    name: Julia (v${{ matrix.version }}) on ${{ matrix.os }}-${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
