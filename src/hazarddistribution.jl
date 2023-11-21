@@ -1,4 +1,4 @@
-@doc raw"""
+"""
     HazardBasedDistribution
 
 `HazardBasedDistribution` is a type that builds a distribution based 
@@ -14,7 +14,7 @@ end
 
 function JointModels.hazard(dist::LogLogistic, t::Real)
     α, β  = dist.α, dist.β
-    return ((β/α)*(t/α)^(β-1))/(1 + (t/α)^β)
+    return ((β / α) * (t / α) ^ (β - 1)) / (1 + (t / α) ^ β)
 end
 ```
 
@@ -24,18 +24,15 @@ To generate samples it solves an ODE and applies inverse transform sampling.
 """
 abstract type HazardBasedDistribution <: ContinuousUnivariateDistribution end
 
-@doc raw"""
+"""
 represents ``h(t)``
 needs to be implemented for any `struct` that subtypes HazardBasedDistribution
 """
 function hazard(dist::HazardBasedDistribution, t::Real) end
 
 @doc raw"""
-calculates
-
-``H(t) = \int_0^t h(u) \; du ``
-
-numerically with a Gauss-Konrad procedure
+calculates ``H(t) = \int_0^t h(u) \; du `` numerically with a 
+Gauss-Konrad procedure.
 """
 function cumulative_hazard(dist::HazardBasedDistribution, t::Real)
     # reformulate for Integrals package (sciml)
@@ -47,7 +44,8 @@ function cumulative_hazard(dist::HazardBasedDistribution, t::Real)
 end
 
 @doc raw"""
-Calculation of the ccdf / survival function at time `t` based on the cumulative hazard 
+Calculation of the ccdf / survival function at time ``t`` based on the 
+cumulative hazard
 
 ``S(t) = \exp(-H(t)) = \exp(-\int h(u) du)``
 """
@@ -56,27 +54,25 @@ function Distributions.ccdf(dist::HazardBasedDistribution, t::Real)
 end
 
 @doc raw"""
-Calculation of the log pdf function at time `t` based on the cumulative hazard 
+Calculation of the log pdf function at time ``t`` based on the cumulative
+hazard 
     
-    ``\log (f(t)) = \log(h(t)\cdot S(t)) = \log( h(t)) - H(t)``
+``\log (f(t)) = \log(h(t)\cdot S(t)) = \log( h(t)) - H(t)``
 """
 function Distributions.logpdf(dist::HazardBasedDistribution, t::Real)
     log(hazard(dist, t)) - cumulative_hazard(dist, t)
 end
 
-@doc raw"""
-Calculation of the pdf function at time `t` based on the log pdf
+"""
+Calculation of the pdf function at time ``t`` based on the log pdf.
 """
 function Distributions.pdf(dist::HazardBasedDistribution, t::Real)
     exp(logpdf(dist, t))
 end
 
 @doc raw"""
-Generate a random sample
-
-``t \sim \text{dist}``
-
-via inverse Transform sampling.
+Generate a random sample ``t \sim \text{dist}`` via inverse transform 
+sampling.
 """
 function Distributions.rand(rng::AbstractRNG, dist::HazardBasedDistribution)
     num_end = 1_000_000

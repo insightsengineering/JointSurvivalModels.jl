@@ -1,5 +1,4 @@
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-JointModels = "54f05ff3-c196-4f1a-acfd-0c2b8e4405db"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
