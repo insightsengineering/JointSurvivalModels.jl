@@ -2,7 +2,8 @@ module JointModels
 
 using Distributions
 using Integrals: IntegralProblem, solve, QuadGKJL
-using DifferentialEquations: ODEProblem, solve, Tsit5
+using OrdinaryDiffEq: ODEProblem, solve, Tsit5
+#using DifferentialEquations: ODEProblem, solve, Tsit5
 using Roots: find_zero
 
 # stdlib

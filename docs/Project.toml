@@ -1,4 +1,13 @@
 [deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DynamicPPL = "366bfd00-2699-11ea-058f-f148b4cae6d8"
+JointModels = "54f05ff3-c196-4f1a-acfd-0c2b8e4405db"
+Loess = "4345ca2d-374a-55d4-8d30-97f9976e7612"
+ParetoSmooth = "a68b5a21-f429-434e-8bfa-46b447300aac"
+RData = "df47a6cb-8c03-5eed-afd8-b6050d6c41da"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
+Survival = "8a913413-2070-5976-9d4c-2b364fdc2f7f"
+Turing = "fce5fe82-541a-59a6-adf8-730c64b5f9a0"

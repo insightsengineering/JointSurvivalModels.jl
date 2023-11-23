@@ -1,3 +1,6 @@
+# add package source code to load path
+#push!(LOAD_PATH,"../src/")
+
 using Pkg
 
 Pkg.activate(".")
