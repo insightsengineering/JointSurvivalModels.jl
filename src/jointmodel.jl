@@ -3,8 +3,8 @@
 
 `GeneralJointModel` is based on the hazard formulaiton
 ``h_i(t) = h_0(t) \exp\left( \beta' \cdot x + b' \cdot L(M_i(t)),``
-where ``h_0`` is the baseline hazard, ``x`` the covaraites with coefficients ``\beta``. The term L(M_i(t)) represents
-the link to the longitudinal model and ``b`` are the link coefficients.
+where ``h_0: \mathbb{R} \to \mathbb{R}`` is the baseline hazard, ``x \in\mathbb{R}^l, l\in\mathb{N}`` the covaraites with coefficients ``\beta\in\mathbb{R}^l``. The term ``L(M_i(t)): \mathbb{R} \to \mathbb{R}^k, k\in\mathbb{N}`` represents
+the link to the longitudinal model(s) and ``b\in\mathbb{R}^k`` are the link coefficients.
 
 Fields:
     - `h₀`: a function in time representing the baseline hazard
