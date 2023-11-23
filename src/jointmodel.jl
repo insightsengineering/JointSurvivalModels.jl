@@ -30,7 +30,7 @@ end
 """
 Constructor if you do not want to consider covariates.
 """
-GeneralJointModel(h₀, b, link_m) = GeneralJointModel(h₀, b, link_m, 0, 0)
+GeneralJointModel(h₀, link_m, b) = GeneralJointModel(h₀, link_m, b, 0, 0)
 
 
 @doc raw"""
