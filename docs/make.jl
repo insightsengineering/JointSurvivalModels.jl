@@ -10,7 +10,7 @@ using Distributions
 
 makedocs(
     sitename = "JointModels",
-    format = Documenter.HTML(),
+    format = Documenter.HTML(size_threshold = nothing),
     modules = [JointModels]
 )
 
