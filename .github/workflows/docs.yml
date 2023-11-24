@@ -2,7 +2,7 @@ name: Documenter
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, dev/docsaction]
     tags: [v*]
   pull_request:
 
