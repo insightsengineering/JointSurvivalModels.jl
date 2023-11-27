@@ -14,5 +14,4 @@ makedocs(
 # for more information.
 deploydocs(
     repo = "github.com/insightsengineering/jointmodels.jl.git",
-    devbranch = "main"
 )
