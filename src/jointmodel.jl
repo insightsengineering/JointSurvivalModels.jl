@@ -19,7 +19,7 @@ Fields:
 Usage: ... TO DO ...
 
 """
-struct GeneralJointModel2<:HazardBasedDistribution
+struct GeneralJointModel<:HazardBasedDistribution
     h₀
     link_m::Vector
     b::Vector
