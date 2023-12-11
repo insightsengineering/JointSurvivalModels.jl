@@ -11,9 +11,16 @@ using Random
 export 
     HazardBasedDistribution,
     hazard,
-    cumulative_hazard
+    cumulative_hazard,
+    pdf,
+    logpdf,
+    cdf,
+    ccdf,
+    rand,
+    JointModels,
 
 
 include("hazarddistribution.jl")
+include("jointmodel.jl")
 
 end # module JointModels

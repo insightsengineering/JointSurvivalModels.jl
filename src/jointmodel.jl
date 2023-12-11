@@ -1,4 +1,4 @@
-@docs raw"""
+@doc raw"""
     GeneralJointModel <: HazardBasedDistribution <: ContinuousUnivariateDistribution
 
 `GeneralJointModel` is based on the hazard formulaiton
@@ -19,18 +19,29 @@ Fields:
 Usage: ... TO DO ...
 
 """
-struct GeneralJointModel<:HazardBasedDistribution
+struct GeneralJointModel2<:HazardBasedDistribution
     h₀
-    link_m
-    b
-    x
-    β
+    link_m::Vector
+    b::Vector
+    x::Vector
+    β::Vector
 end
 
-"""
-Constructor if you do not want to consider covariates.
-"""
-GeneralJointModel(h₀, link_m, b) = GeneralJointModel(h₀, link_m, b, 0, 0)
+# Constructor that allows to ommit covariates
+GeneralJointModel(h₀, link_m, b) = GeneralJointModel(h₀, link_m, b, [0], [0])
+
+# Constructor that allows to use singular variables and function instead of arrays
+function GeneralJointModel(h₀, link_m, b, x, β)
+    if !(link_m <: Vector) && !(b <: Vector)
+        link_m = [link_m]
+        b = [b]
+    end
+    if !(x <: Vector) && !(β <: Vector)
+        x = [x]
+        β = [β]
+    end
+    return GeneralJointModel(h₀, link_m, b, x, β)
+end
 
 
 @doc raw"""
