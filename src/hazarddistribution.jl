@@ -28,17 +28,19 @@ abstract type HazardBasedDistribution <: ContinuousUnivariateDistribution end
 represents ``h(t)``
 needs to be implemented for any `struct` that subtypes HazardBasedDistribution
 """
-function hazard(dist::HazardBasedDistribution, t::Real) end
+function hazard(dist::HazardBasedDistribution, t::Real) 
+    error("You need to implement a hazard.")
+end
 
 @doc raw"""
 calculates ``H(t) = \int_0^t h(u) \; du `` numerically with a 
 Gauss-Konrad procedure.
 """
-function cumulative_hazard(dist::HazardBasedDistribution, t::Real)
+function cumulative_hazard(dist::HazardBasedDistribution, t_end::Real)
     # reformulate for Integrals package (sciml)
     integrals_hazard(t, dist) = hazard(dist, t)
     # integrate from 0.000001 to $t$ (some hazards are not defined at 0)
-    ∫h = IntegralProblem(integrals_hazard ,1e-6 ,float(t) ,dist)
+    ∫h = IntegralProblem(integrals_hazard ,1e-6 ,float(t_end) ,dist)
     H = solve(∫h, QuadGKJL())[1]
     return H
 end
