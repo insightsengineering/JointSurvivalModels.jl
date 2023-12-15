@@ -1,17 +1,17 @@
 @doc raw"""
     GeneralJointModel <: HazardBasedDistribution <: ContinuousUnivariateDistribution
 
-`GeneralJointModel` is based on the hazard formulaiton
+`GeneralJointModel` is based on the hazard formulaiton:
 
-``h_i(t) = h_0(t) \exp\left(b' \cdot L(M_i(t) + \beta' \cdot x ),``
+``h_i(t) = h_0(t) \exp\left(b' \cdot L(M_i(t)) + \beta' \cdot x \right),``
 
-where ``h_0: \mathbb{R} \to \mathbb{R}`` is the baseline hazard function. The term ``L(M_i(t)): \mathbb{R} \to \mathbb{R}^k, k\in\mathbb{N}`` represents
-the link to the longitudinal model(s) and ``b\in\mathbb{R}^k`` are the link coefficients. Lastly ``x \in\mathbb{R}^l, l\in\mathb{N}`` the covaraites with coefficients ``\beta\in\mathbb{R}^l``.
+where ``h_0: \mathbb{R} \to \mathbb{R}`` is the baseline hazard function. The term ``L(M(t)): \mathbb{R} \to \mathbb{R}^k, k\in\mathbb{N}`` represents
+the link to the longitudinal model(s)  and ``b\in\mathbb{R}^k`` are the link coefficients. Lastly ``x \in\mathbb{R}^l, l\in\mathb{N}`` the covaraites with coefficients ``\beta\in\mathbb{R}^l``.
 
 # Fields:
 - `h₀::Function`: a function in time representing the baseline hazard
 - `b::Vector{Real}`: coefficients for links to longitudinal models, should be in the same dimension as `link_m`
-- `link_m::Vector{Function}`: function(s) representing the link to a single or multiple longitudinal models
+- `link_m::Vector{Function}`: functions in time representing the link to a single or multiple longitudinal models
 - `β::Vector{Real}`: coefficients for covariates, should be in the same dimension as `x`
 - `x::Vector{Real}`: covariates
 
@@ -32,14 +32,6 @@ GeneralJointModel(identity,
                     [ 0, sqrt(2)])
 # corresponds to hazard: identity(t) * exp(0.01 * sqrt(t) - 0.02 * (sin(t)+1) + 0.03 * cos(t)^2  + 2 * 0 + 0.3 * sqrt(2))
 ```
-These correspond to hazards:
-
-
-You can use this struct without specifying `x` AND `β`, then they will be set to `0` by a constructor.
-
-
-Usage: ... TO DO ...
-
 """
 struct GeneralJointModel<:HazardBasedDistribution
     h₀
@@ -68,7 +60,7 @@ end
 
 @doc raw"""
 The `hazard` for `GeneralJointModel` calculates the hazard according to the formulation
-    ``h_i(t) = h_0(t) \exp\left( \beta' \cdot x + b' \cdot L(M_i(t))``
+``h(t) = h_0(t) \exp\left(b' \cdot L(M(t)) + \beta' \cdot x \right)``
 described in the documentation of `GeneralJointModel`
 """
 function hazard(jm::GeneralJointModel, t::Real)
