@@ -27,7 +27,7 @@ Additionally we consider covariates $x\in \mathbb{R}^l, l\in\mathbb{N}$ and coef
 ```math
 \begin{align*}
 h(t) &= h_0(t) \exp\left(b' \cdot L(M(t)) + \beta' \cdot x\right)\\
-     &= h_0(t) \exp\left(\sum_{j\in [k]}b_{j} l_j(m_{j}(t) + \sum_{j\in [l]} x_j  b_j)  \right),
+     &= h_0(t) \exp\left(\sum_{j\in [k]}b_{j} l_j(m_{j}(t) + \sum_{j\in [l]} x_j  \beta_j)  \right),
 \end{align*}
 ```
 which is implemented in the general joint model.
