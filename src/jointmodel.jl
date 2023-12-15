@@ -8,10 +8,10 @@ the link to the longitudinal model(s) and ``b\in\mathbb{R}^k`` are the link coef
 
 Fields:
     - `h₀`: a function in time representing the baseline hazard
-    - `link_m`: function or array of function representing the link to a single or multiple longitudinal models
     - `b`: coefficient(s) for `link_m`, should be in the same dimension as `link_m`
-    *- `x`: covariate or vector of covariates
-    *- `β`: coefficient(s) for `x`, should be in the same dimension as `x`
+    - `link_m`: function or array of function representing the link to a single or multiple longitudinal models
+    - `β`: coefficient(s) for `x`, should be in the same dimension as `x`
+    - `x`: covariate or vector of covariates
 
 * you can use this struct without specifying `x` AND `β` then they will be set to `0` by a constructor.
 
@@ -21,26 +21,26 @@ Usage: ... TO DO ...
 """
 struct GeneralJointModel<:HazardBasedDistribution
     h₀
-    link_m::Vector
     b::Vector
-    x::Vector
+    link_m::Vector
     β::Vector
+    x::Vector
 end
 
 # Constructor that allows to ommit covariates
-GeneralJointModel(h₀, link_m, b) = GeneralJointModel(h₀, link_m, b, [0], [0])
+GeneralJointModel(h₀, b, link_m) = GeneralJointModel(h₀, b, link_m, [0], [0])
 
 # Constructor that allows to use singular variables and function instead of arrays
-function GeneralJointModel(h₀, link_m, b, x, β)
-    if !(link_m <: Vector) && !(b <: Vector)
+function GeneralJointModel(h₀, b, link_m, β, x)
+    if !(typeof(link_m) <: Vector) && !(typeof(b) <: Vector)
         link_m = [link_m]
         b = [b]
     end
-    if !(x <: Vector) && !(β <: Vector)
+    if !(typeof(x) <: Vector) && !(typeof(β) <: Vector)
         x = [x]
         β = [β]
     end
-    return GeneralJointModel(h₀, link_m, b, x, β)
+    return GeneralJointModel(h₀, b, link_m, β, x)
 end
 
 
