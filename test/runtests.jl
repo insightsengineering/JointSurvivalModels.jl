@@ -33,7 +33,6 @@ using HypothesisTests
     KS_test = ExactOneSampleKSTest(sample_num,dist_weibull)
     @test KS_test.δ < 0.1
 
-
 end
 
 @testset "Joint Model interface tests" begin
@@ -56,6 +55,6 @@ end
         @test hazard(jm2, t) == hazard2(t)
         # approx is used here since for t = 4 there are computational differences due to complex calculation in exponential
         @test hazard(jm3, t) ≈ hazard3(t)
-    end    
+    end
 
 end
