@@ -1,5 +1,5 @@
 """
-    HazardBasedDistribution
+    HazardBasedDistribution <: ContinuousUnivariateDistribution
 
 `HazardBasedDistribution` is a type that builds a distribution based 
 on a hazard function.
