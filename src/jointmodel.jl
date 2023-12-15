@@ -2,18 +2,40 @@
     GeneralJointModel <: HazardBasedDistribution <: ContinuousUnivariateDistribution
 
 `GeneralJointModel` is based on the hazard formulaiton
-``h_i(t) = h_0(t) \exp\left( \beta' \cdot x + b' \cdot L(M_i(t)),``
-where ``h_0: \mathbb{R} \to \mathbb{R}`` is the baseline hazard, ``x \in\mathbb{R}^l, l\in\mathb{N}`` the covaraites with coefficients ``\beta\in\mathbb{R}^l``. The term ``L(M_i(t)): \mathbb{R} \to \mathbb{R}^k, k\in\mathbb{N}`` represents
-the link to the longitudinal model(s) and ``b\in\mathbb{R}^k`` are the link coefficients.
 
-Fields:
-    - `h₀`: a function in time representing the baseline hazard
-    - `b`: coefficient(s) for `link_m`, should be in the same dimension as `link_m`
-    - `link_m`: function or array of function representing the link to a single or multiple longitudinal models
-    - `β`: coefficient(s) for `x`, should be in the same dimension as `x`
-    - `x`: covariate or vector of covariates
+``h_i(t) = h_0(t) \exp\left(b' \cdot L(M_i(t) + \beta' \cdot x ),``
 
-* you can use this struct without specifying `x` AND `β` then they will be set to `0` by a constructor.
+where ``h_0: \mathbb{R} \to \mathbb{R}`` is the baseline hazard function. The term ``L(M_i(t)): \mathbb{R} \to \mathbb{R}^k, k\in\mathbb{N}`` represents
+the link to the longitudinal model(s) and ``b\in\mathbb{R}^k`` are the link coefficients. Lastly ``x \in\mathbb{R}^l, l\in\mathb{N}`` the covaraites with coefficients ``\beta\in\mathbb{R}^l``.
+
+# Fields:
+- `h₀::Function`: a function in time representing the baseline hazard
+- `b::Vector{Real}`: coefficients for links to longitudinal models, should be in the same dimension as `link_m`
+- `link_m::Vector{Function}`: function(s) representing the link to a single or multiple longitudinal models
+- `β::Vector{Real}`: coefficients for covariates, should be in the same dimension as `x`
+- `x::Vector{Real}`: covariates
+
+
+# Example
+There are constructos for calling `GeneralJointModel` without covariates and for single longitudinal models without the need for arrays
+```
+using JointModels
+
+GeneralJointModel(identity, 0.01, identity, 0.02, 3)
+# corresponds to hazard: identity(t) * exp(0.01 * identity(t) +  0.02 * 3) 
+GeneralJointModel(identity, 0.01, identity)
+# corresponds to hazard: identity(t) * exp(0.01 * identity(t))
+GeneralJointModel(identity,
+                    [0.01,-0.02,0.03],
+                    [x -> sqrt(x), x -> sin(x)+1, x -> cos(x)^2],
+                    [2, 0.3],
+                    [ 0, sqrt(2)])
+# corresponds to hazard: identity(t) * exp(0.01 * sqrt(t) - 0.02 * (sin(t)+1) + 0.03 * cos(t)^2  + 2 * 0 + 0.3 * sqrt(2))
+```
+These correspond to hazards:
+
+
+You can use this struct without specifying `x` AND `β`, then they will be set to `0` by a constructor.
 
 
 Usage: ... TO DO ...

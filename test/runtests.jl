@@ -49,7 +49,7 @@ end
                             [x -> sqrt(x), x -> sin(x)+1, x -> cos(x)^2],
                             [2, 0.3],
                             [ 0, sqrt(2)])
-    hazard3(t) = identity(t) * exp(0.01 * sqrt(t) - 0.02 *(sin(t)+1) + 0.03* cos(t)^2  + 2*0 + 0.3*sqrt(2))
+    hazard3(t) = identity(t) * exp(0.01 * sqrt(t) - 0.02 * (sin(t)+1) + 0.03 * cos(t)^2  + 2 * 0 + 0.3 * sqrt(2))
 
     for t in [0.125, 0.25, 0.5, 1, 2, 4]
         @test hazard(jm1, t) == hazard1(t)
