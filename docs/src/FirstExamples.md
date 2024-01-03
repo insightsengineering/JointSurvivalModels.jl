@@ -88,8 +88,12 @@ One application of this module is the application in bayesian inference framewor
 
 ```julia
 using Turing
+# for better performance with multidimensional distributions (mixed effects)
+using ReverseDiff
+Turing.setadbackend(:reversediff)
+Turing.setrdcache(true)
 
-@model function example(Y, t_m, T, Δ)
+@model function example_longitudinal(Y, t_m, T, Δ)
     n = length(Y)
     
     # longitudianl coef
@@ -99,17 +103,9 @@ using Turing
     b ~ Uniform(0.1, 0.3)
     # multiplicative error
     σ ~ Exponential(0.2)
-    # survival coef
-    α = 0.6 #~ Uniform(0.8,1.4)
-    θ = 70 #~ LogNormal(4,1)
-    # joint model coef
-    c ~ Normal(0,0.03)
-    # models
+    # model
     m(i) = t -> parametric_m_i(t, i, a, b)
-    h_0(t) = parametric_h_0(t, α, θ)
-    joint_models = [GeneralJointModel(h_0, c, m(i)) for i in 1:n] # joint models for all
     # longitudinal likelihood
-    
     for i in 1:n
         n_i = length(Y[i])
         for j in 1:n_i
@@ -117,11 +113,36 @@ using Turing
             Y[i][j] ~ Normal(m(i)(t_m[Int(j)]), σ * m(i)(t_m[Int(j)]))
         end
     end
+end
+
+longitudinal_chn = sample(example_longitudinal(Y, t_m, T, Δ), NUTS(), 200)
+posterior_means = summarize(longitudinal_chn)[:,2]
+a_hat = posterior_means[1:n]
+b_hat = posterior_means[101]
+
+@model function example_survival(Y, t_m, T, Δ, a, b)
+    n = length(Y)
+    
+    # survival coef
+    α ~ Uniform(0.4,1.2) #0.6
+    θ ~ LogNormal(4,0.2) #70
+    # joint model coef
+    c ~ Normal(0,0.03)
+    # models
+    m(i) = t -> parametric_m_i(t, i, a, b)
+    h_0(t) = parametric_h_0(t, α, θ)
+    joint_models = [GeneralJointModel(h_0, c, m(i)) for i in 1:n] # joint models for all
+
     # survival likelihood
     for i in 1:n
         T[i] ~ censored(joint_models[i], upper = 50 + Δ[i]) # if cencored at time 50 then uppder = 50
     end
 end
+using ForwardDiff
+Turing.setadbackend(:forwarddiff)
+# using previously sampled posterior for longitudinal process
+survival_chn = sample(example_survival(Y, t_m, T, Δ, a_hat, b_hat), NUTS(), 100)
+
 
 example_model = example(Y,t_m, T, Δ)
 
