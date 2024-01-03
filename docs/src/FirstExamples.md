@@ -4,119 +4,141 @@
 The struct `GeneralJointModel` allows you to implement joint models. Let us consider a simple example. First we describe a model and generate data. We define a nonlinear mixed-effects longitudinal model
 
 ```math
-m_i(t) = a * t^(b_i) * cos(c_i * t)^2,
+m_i(t) = t^(a_i) * (1+cos(b * t)^2),
 ```
-where ``a`` is a population parameter and ``b_i, c_i`` are mixed effects. We assume distributions
+where ``a_i`` is a mixed effects parameter for each individual and ``b`` a population parameter. Next a survival model with baseline hazard
 
-```math
-a ~ Exponential(1.5)
-b_i ~ Beta(2,5)
-c_i ~ Normal(0,1)
-```
-The observations are measured with a multiplicative error
-```math
-e ~ Exponential(0.05)
-```
-Simulation of such longitudinal data in julia for 100 individual and 10 observations.
-```julia
-m(t, a, b_i, c_i) = a * t^(b_i) * cos(c_i * t)^2
-individual_m(i) = t -> m(t, a, b[i], c[i])
-
-n = 100
-time_points = range(0,10,10)
-
-a = 0.5
-b = rand(Product(fill(Beta(2,5), n)))
-c = rand(MvNormal(zeros(n), ones(n)))
-
-e = 0.02
-```
-Let the baseline hazard for the survival analysis be the hazard of the Weibull distribution
 ```math
 h_0(t) = \alpha/\theta ( t / \theta)^(\alpha -1)
 ```
-and for individual $i$ we have a contributoin from the true longitudinal model $m_i$. As link to this model we take the identity function $id$ and coeficient $d$. This results in hazard
+
+with the two parameters ``\alpha`` and ``\theta``. From these we can build a joint model using the identity function ``id: x \mapsto x`` and link coefficient ``c``.
+
 ```math
-h_i(t) = h_0(t) \exp(d * identity(m_i(t)))
-```
-To implement this joint distribution we use the `GeneralJointModel`
-```julia
-alpha = 1.2
-lambda = 20
-d = 0.05
-h_0(t) = alpha/lambda *(t/lambda)^(1-alpha)
-joint_models = [GeneralJointModel(h_0, d,individual_m(i)) for i in 1:n]
-```
-The parametric hazard is
-```math
-h_i(t) = alpha/lambda *(t/lambda)^(1-alpha) * exp(d * a * t^(b_i) * cos(c_i * t)^2)
-```
-Now we can pose the question about the likelihood that individual ``1`` has an event a certain time.
-```julia
-t = 5
-pdf(joint_models[1], t)
-```
-as well as the probability of survival until a certain time
-```julia
-ccdf(joint_models[1], t)
-```
-The module `Distributions.jl` provided a convinient tool ([censoring](https://juliastats.org/Distributions.jl/stable/censored/)) to model left and right cencoring.
-```
-pdf(censored(joint_models[1], upper = 10), 5)  # likelihood of event occuring at 5
-pdf(censored(joint_models[1], upper = 10), 10) # probability of survival until 10
-```
-Lastly we simulate some measurements that we can use later on for fitting a model.
-```julia
-# survival
-event_times = rand.(joint_models)
-event_times = min.(event_times, 10) # censoring at 10
-event_indicators = event_times .< 10
-# longitudinal measurements with multiplicative error
-Y = zeros(n, length(time_points))
-for i in range(1,n)
-    for (j, t) in enumerate(time_points)
-        ob_ij = individual_m(i)(t)
-        Y[i,j]  = rand(Normal(ob_ij, ob_ij * e))
-    end
-end
+h_i(t) = h_0(t) \exp(c * id(m_i(t))) = \alpha/\theta ( t / \theta)^(\alpha -1) * exp(c * t^(a_i) * cos(b * t)^2).
 ```
 
-## Fitting a model in Turing
-One application of this module is in probabelistic inference. We will simulaneously estimate the mixed effects model parameter as well as the survival parameters and link coefficient.
+In code:
+```julia
+parametric_m_i(t, i, a, b) = t^(a[i]) * (1+cos(b * t)^2)
+parametric_h_0(t, α, θ) = α/θ *(t/θ)^(1-α)
+parametric_joint_model(i, a, b, c, α, θ) = GeneralJointModel(t -> parametric_h_0(t, α, θ), c, t -> m_i(t, i, a, b))
+```
+
+
+To simulate data for 100 individuals we assume ``a_i \overset{~}{\text{iid}} Beta(2,10)`` and ``b = 3, c = 0.02, \alpha = 1.2, \theta = 50``:
+```julia
+using Distributions
+using JointModels
+using Random
+Random.seed!(222)
+n = 100 # number of individuals
+a = rand(Product(fill(Beta(10,2), n)))
+b = 0.2
+c = 0.05
+α = 0.6
+θ = 70
+
+
+m(i) = t -> parametric_m_i(t, i, a, b)
+h_0(t) = parametric_h_0(t, α, θ)
+joint_models = [GeneralJointModel(h_0, c, m(i)) for i in 1:n] # joint models for all individuals
+```
+
+Inspecting individual ``1`` and ``2``.
+
+
+```julia
+using StatsPlots
+jm = joint_models[1]
+
+r = range(0,50,100)
+
+lm = plot(r, m(1), title="Longitudinal process", label = "Individual 1", color = :blue)
+plot!(lm, r, m(2), label = "Individual 2", color = :green)
+```
+```julia
+sm = plot(r, t-> ccdf(joint_models[1], t), label = "Survival individual 1", title="Joint survival process", color = :blue)
+plot!(sm, r, t-> ccdf(joint_models[2], t), label = "Survival individual 2", color = :green)
+plot!(sm, r, t->ccdf(Weibull(1.2,100),t), label = "Baseline survival", color = :black)
+```
+
+To simulate longitudinal measurements ``y_{ij}`` for individual ``i`` at time ``t_ij`` we assume a multiplicative error ``y_{ij} ~ N(m_i(t_{ij}), \sigma * m_i(t_{ij}) ), \sigma = 0.1``. We first simulate ``9`` longitudinal measurements and survival times
+```julia
+σ = 0.15
+t_m = range(1,50,9)
+Y = [[rand(Normal(m(i)(t_m[j]), σ * m(i)(t_m[j]))) for j in 1:9] for i in 1:n]
+T = [rand(jm) for jm in joint_models]
+```
+Additionaly we assume right-censoring at ``50`` and no measurements after an event:
+```julia
+Δ = T .< 50
+T = min.(T, 50)
+indices = [findlast(T[i] .>= t_m) for i in 1:n]
+Y = [Y[i][1:indices[i]] for i in 1:n]
+scatter!(lm, t_m[1:indices[1]], Y[1], label="obs individual 1", color = :blue)
+scatter!(lm, t_m[1:indices[2]], Y[2], label="obs individual 2", color = :green)
+vline!(lm, [T[1]], label="Event time ind 1", color = :blue)
+vline!(lm, [T[2]], label="Event time ind 2", color = :green)
+```
+
+
+## Modeling in Turing
+One application of this module is the application in bayesian inference frameworks for example `Turing.jl`. For this we choose a suitable prior distribution for the parameters and use the framework to sample the posterior. This works based on the numerical estimation of the log probability density function.
 
 ```julia
 using Turing
 
-@model function example(Y, time_points,  event_times, event_indicators, censore_time)
-    a ~ Uniform(0.2,1)
-    b2 ~ Uniform(2,8)
-    b ~ filldist(Beta(2,b2), n)
-    c2 ~ Uniform(0.5, 1.5)
-    c = rand(MvNormal(zeros(n), c2 * ones(n)))
-    # longitudinal models
-    individual_m(i) = t -> a * t^(b[i]) * cos(c[i] * t)^2
-    # error
-    e ~ Exponential(0.05)
-    # survival
-    alpha ~ Uniform(0.8, 1.6)
-    lambda = truncated(Normal(25,10), 10, 30)
-    h_0(t) = alpha/lambda *(t/lambda)^(1-alpha)
-    # link coeficient
-    d ~ Uniform(-0.7, 0.7)
-    joint_models = [GeneralJointModel(h_0, d, individual_m(i)) for i in eachindex(event_times)]
-
-    # Likelihood calculations
-    # longitudinal measurements
-    inds, obs = size(Y)
-    for i in 1:inds
-        for j in 1:obs
-            ob_ij = individual_m(i)(time_points(j))
-            Y[i,j] ~ Normal(ob_ij, ob_ij * e)
+@model function example(Y, t_m, T, Δ)
+    n = length(Y)
+    
+    # longitudianl coef
+    beta_1 = 10
+    beta_2 = 2
+    a ~ filldist(Beta(beta_1,beta_2), n)
+    b ~ Uniform(0.1, 0.3)
+    # multiplicative error
+    σ ~ Exponential(0.2)
+    # survival coef
+    α = 0.6 #~ Uniform(0.8,1.4)
+    θ = 70 #~ LogNormal(4,1)
+    # joint model coef
+    c ~ Normal(0,0.03)
+    # models
+    m(i) = t -> parametric_m_i(t, i, a, b)
+    h_0(t) = parametric_h_0(t, α, θ)
+    joint_models = [GeneralJointModel(h_0, c, m(i)) for i in 1:n] # joint models for all
+    # longitudinal likelihood
+    
+    for i in 1:n
+        n_i = length(Y[i])
+        for j in 1:n_i
+            #println([n_i,i,j,a,b, Y[i][j]])
+            Y[i][j] ~ Normal(m(i)(t_m[Int(j)]), σ * m(i)(t_m[Int(j)]))
         end
     end
-    # event times and indicators
-    for i in eachindex(event_times)
-        event_times[i] ~ censored(joint_models[i], upper = event_times[i] + event_indicator[i])
+    # survival likelihood
+    for i in 1:n
+        T[i] ~ censored(joint_models[i], upper = 50 + Δ[i]) # if cencored at time 50 then uppder = 50
     end
 end
+
+example_model = example(Y,t_m, T, Δ)
+
+# backend for multidimensional distributions
+using ReverseDiff
+Turing.setadbackend(:reversediff)
+Turing.setrdcache(true)
+
+init_params = (
+    a = fill(0.8, n),
+    b = 0.2,
+    c = 0.0,
+    σ = 0.15
+)
+
+example_chn = sample(example_model, NUTS(), 20)#, init_params = init_params)
+
+print(1)
+
 ```
