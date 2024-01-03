@@ -25,6 +25,22 @@ To generate samples it solves an ODE and applies inverse transform sampling.
 abstract type HazardBasedDistribution <: ContinuousUnivariateDistribution end
 
 """
+This function represents the numeric spport of the distribution and return a tuple `(float_start::Float, float_stop::Float)'.
+The default value is: `(1e-6, 10_000)`. Note that some distributions are not defined at `0` i.e. Weibull with shape parameter less than 1.
+
+The pdf and hazard are 0 before `float_start` and the numeric integration to calculate the integral over the haazrd in `cumulative_hazard` starts at `beginning`.
+When sampling with `rand` an ODE is solved over the support.
+
+
+# Usage
+You should adjust the support according to your data
+```julia
+JointModels.support(dist:HazardBasedDistribution) = (-100, 1000)
+```
+"""
+support(dist::HazardBasedDistribution) = (1e-6, 10_000)
+
+"""
 represents ``h(t)``
 needs to be implemented for any `struct` that subtypes HazardBasedDistribution
 """
@@ -37,10 +53,11 @@ calculates ``H(t) = \int_0^t h(u) \; du `` numerically with a
 Gauss-Konrad procedure.
 """
 function cumulative_hazard(dist::HazardBasedDistribution, t_end::Real)
+    (start, stop) = support(dist)
     # reformulate for Integrals package (sciml)
     integrals_hazard(t, dist) = hazard(dist, t)
-    # integrate from 0.000001 to $t$ (some hazards are not defined at 0)
-    ∫h = IntegralProblem(integrals_hazard ,1e-6 ,float(t_end) ,dist)
+    # some distributions might not be defined at the start: add 0.000001
+    ∫h = IntegralProblem(integrals_hazard, start ,float(t_end) ,dist)
     H = solve(∫h, QuadGKJL())[1]
     return H
 end
@@ -77,10 +94,9 @@ Generate a random sample ``t \sim \text{dist}`` via inverse transform
 sampling.
 """
 function Distributions.rand(rng::AbstractRNG, dist::HazardBasedDistribution)
-    num_end = 1_000_000
     # calculate ode solution of $H(t) = \int_0^t h(u) \, du$, starting at a positive value
     H(nLogS, p, t) = hazard(p, t)
-    prob = ODEProblem(H ,0.0 ,(1e-6,num_end))
+    prob = ODEProblem(H, 0.0, support(dist))
     sol = solve(prob, Tsit5(); p=dist)
     S(t) = exp(-sol(t))
     F(t) = 1 - S(t)
@@ -88,5 +104,5 @@ function Distributions.rand(rng::AbstractRNG, dist::HazardBasedDistribution)
     # via the root of $g(t) := F(t) - x₀$
     x₀ = rand()
     g(t) = F(t) - x₀
-    return find_zero(g,(1e-6, num_end)) 
+    return find_zero(g, support(dist)) 
 end
