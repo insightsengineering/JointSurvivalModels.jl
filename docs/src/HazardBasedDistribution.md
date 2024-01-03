@@ -11,6 +11,7 @@ JointModels.HazardBasedDistribution
 The `Distributions.jl` functionalities implemented for `HazardBasedDistribution`.
 
 ```@docs
+JointModels.support(dist::HazardBasedDistribution)
 JointModels.hazard(dist::HazardBasedDistribution, t::Real)
 JointModels.cumulative_hazard(dist::HazardBasedDistribution, t::Real)
 Base.rand(rng::AbstractRNG, dist::HazardBasedDistribution)
