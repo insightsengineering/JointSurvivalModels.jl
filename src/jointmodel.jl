@@ -1,23 +1,23 @@
 @doc raw"""
     GeneralJointModel <: HazardBasedDistribution <: ContinuousUnivariateDistribution
 
-`GeneralJointModel` is based on the hazard formulaiton:
+`GeneralJointModel` is based on the hazard formulation:
 
 ``h_i(t) = h_0(t) \exp\left(b' \cdot L(M_i (t)) + \beta' \cdot x \right),``
 
-where ``h_0: \mathbb{R} \to \mathbb{R}`` is the baseline hazard function. The term ``L(M(t)): \mathbb{R} \to \mathbb{R}^k, k\in\mathbb{N}`` represents
-the link to the longitudinal model(s)  and ``b\in\mathbb{R}^k`` are the link coefficients. Lastly ``x \in\mathbb{R}^l, l\in\mathbb{N}`` the covaraites with coefficients ``\beta\in\mathbb{R}^l``.
+where ``h_0: \mathbb{R} \to \mathbb{R}_{+}`` is the baseline hazard function. The term ``L(M(t)): \mathbb{R} \to \mathbb{R}^k, k\in\mathbb{N}`` represents
+the link to the longitudinal model(s)  and ``b\in\mathbb{R}^k`` are the link coefficients. Lastly ``x \in\mathbb{R}^l, l\in\mathbb{N}`` the covariates with coefficients ``\beta\in\mathbb{R}^l``.
 
 # Fields:
-- `h₀::Function`: a function in time representing the baseline hazard
-- `b::Vector{Real}`: coefficients for links to longitudinal models, should be in the same dimension as `link_m`
+- `h₀::Function`: a positive valued function in time representing the baseline hazard
+- `b::Vector{Real}`: coefficients for links to longitudinal models, should have the same length as `link_m`
 - `link_m::Vector{Function}`: unary functions (one argument) in time representing the link to a single or multiple longitudinal models
-- `β::Vector{Real}`: coefficients for covariates, should be in the same dimension as `x`
+- `β::Vector{Real}`: coefficients for covariates, should have the same length as `x`
 - `x::Vector{Real}`: covariates
 
 
 # Example
-There are constructos for calling `GeneralJointModel` without covariates and for single longitudinal models without the need for arrays
+There are constructors for calling `GeneralJointModel` without covariates and for single longitudinal models without the need for arrays. For example:
 ```
 using JointModels
 
