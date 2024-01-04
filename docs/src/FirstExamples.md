@@ -22,7 +22,11 @@ In code:
 ```julia
 parametric_m_i(t, i, a, b) = t^(a[i]) * (1+cos(b * t)^2)
 parametric_h_0(t, α, θ) = α/θ *(t/θ)^(1-α)
-parametric_joint_model(i, a, b, c, α, θ) = GeneralJointModel(t -> parametric_h_0(t, α, θ), c, t -> m_i(t, i, a, b))
+parametric_joint_model(i, a, b, c, α, θ) = GeneralJointModel(
+    t -> parametric_h_0(t, α, θ),   # baseline hazard function
+    c,                              # link coefficient
+    t -> m_i(t, i, a, b)            # link function
+)
 ```
 
 
@@ -59,7 +63,7 @@ plot!(lm, r, m(2), label = "Individual 2", color = :green)
 ```julia
 sm = plot(r, t-> ccdf(joint_models[1], t), label = "Survival individual 1", title="Joint survival process", color = :blue)
 plot!(sm, r, t-> ccdf(joint_models[2], t), label = "Survival individual 2", color = :green)
-plot!(sm, r, t->ccdf(Weibull(1.2,100),t), label = "Baseline survival", color = :black)
+plot!(sm, r, t-> ccdf(Weibull(1.2,100),t), label = "Baseline survival", color = :black)
 ```
 ![](fig/sm.png)
 
@@ -151,7 +155,7 @@ Finally a joint model where the posterior of the longitudinal and joint survival
 ```julia
 @model function example_joint_model(Y, t_m, T, Δ)
     n = length(Y)
-    
+    # longitudinal coef
     a ~ filldist(Beta(10,2), n)
     b ~ Uniform(0.1, 0.3)
     # multiplicative error
@@ -196,4 +200,4 @@ plot!(Dx2f, label = "f''")
 ```
 ![](fig/deriv.png)
 
-Another interesting module could be `DifferentialEquations.jl,` which allows to calculate ODEs and PEDs numerically.
+Another interesting module could be `DifferentialEquations.jl,` which allows to calculate ODEs and PDEs numerically.
