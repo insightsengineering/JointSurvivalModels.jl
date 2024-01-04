@@ -4,18 +4,18 @@
 The struct `GeneralJointModel` allows you to implement joint models. Let us consider a simple example. First we describe a model and generate data. We define a nonlinear mixed-effects longitudinal model
 
 ```math
-m_i(t) = t^(a_i) * (1+cos(b * t)^2),
+m_i(t) = t^{a_i} * (1+cos(b * t)^2),
 ```
 where ``a_i`` is a mixed effects parameter for each individual and ``b`` a population parameter. Next a survival model with baseline hazard
 
 ```math
-h_0(t) = \alpha/\theta ( t / \theta)^(\alpha -1)
+h_0(t) = \alpha/\theta ( t / \theta)^{\alpha -1}
 ```
 
 with the two parameters ``\alpha`` and ``\theta``. From these we can build a joint model using the identity function ``id: x \mapsto x`` and link coefficient ``c``.
 
 ```math
-h_i(t) = h_0(t) \exp(c * id(m_i(t))) = \alpha/\theta ( t / \theta)^(\alpha -1) * exp(c * t^(a_i) * cos(b * t)^2).
+h_i(t) = h_0(t) \exp(c * id(m_i(t))) = \alpha/\theta ( t / \theta)^{\alpha -1} * exp(c * t^{a_i} * cos(b * t)^2).
 ```
 
 In code:
@@ -26,7 +26,7 @@ parametric_joint_model(i, a, b, c, α, θ) = GeneralJointModel(t -> parametric_h
 ```
 
 
-To simulate data for 100 individuals we assume ``a_i \overset{~}{\text{iid}} Beta(2,10)`` and ``b = 3, c = 0.02, \alpha = 1.2, \theta = 50``:
+To simulate data for 100 individuals we assume ``a_i ~ Beta(2,10)`` and ``b = 3, c = 0.02, \alpha = 1.2, \theta = 50``:
 ```julia
 using Distributions
 using JointModels
@@ -49,7 +49,7 @@ Inspecting individual ``1`` and ``2``.
 
 
 ```julia
-using StatsPlots
+using Plots
 jm = joint_models[1]
 
 r = range(0,50,100)
@@ -57,11 +57,13 @@ r = range(0,50,100)
 lm = plot(r, m(1), title="Longitudinal process", label = "Individual 1", color = :blue)
 plot!(lm, r, m(2), label = "Individual 2", color = :green)
 ```
+![](lm_1.png)
 ```julia
 sm = plot(r, t-> ccdf(joint_models[1], t), label = "Survival individual 1", title="Joint survival process", color = :blue)
 plot!(sm, r, t-> ccdf(joint_models[2], t), label = "Survival individual 2", color = :green)
 plot!(sm, r, t->ccdf(Weibull(1.2,100),t), label = "Baseline survival", color = :black)
 ```
+![](sm.png)
 
 To simulate longitudinal measurements ``y_{ij}`` for individual ``i`` at time ``t_ij`` we assume a multiplicative error ``y_{ij} ~ N(m_i(t_{ij}), \sigma * m_i(t_{ij}) ), \sigma = 0.1``. We first simulate ``9`` longitudinal measurements and survival times
 ```julia
@@ -81,6 +83,7 @@ scatter!(lm, t_m[1:indices[2]], Y[2], label="obs individual 2", color = :green)
 vline!(lm, [T[1]], label="Event time ind 1", color = :blue)
 vline!(lm, [T[2]], label="Event time ind 2", color = :green)
 ```
+![](lm_2.png)
 
 
 ## Modeling in Turing
