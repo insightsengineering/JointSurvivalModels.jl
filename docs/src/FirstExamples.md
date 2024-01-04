@@ -1,10 +1,10 @@
 # First Examples
 
 ## Joint Models
-The struct `GeneralJointModel` allows you to implement joint models. Let us consider a simple example. First we describe a model and generate data. Assume a non-linear mixed effects model for individual ``i \in \{1,2,\dots,100}``
+The struct `GeneralJointModel` allows you to implement joint models. Let us consider a simple example. First we describe a model and generate data. Assume a non-linear mixed effects model for individual ``i \in \{1,2,\dots,100\}``
 
 ```math
-m_i(t) = t^{a_i} * (1+cos(b * t)^2),
+m_i(t) = t^{a_i} * (1+\cos(b * t)^2),
 ```
 where ``a_i`` is a mixed effects parameter for each individual and ``b`` a population parameter. Next a weibull survival model with baseline hazard
 
@@ -15,7 +15,7 @@ h_0(t) = \alpha/\theta ( t / \theta)^{\alpha -1}
 with the two parameters ``\alpha`` and ``\theta``. From these we can build a joint model using the identity link ``id: x \mapsto x`` and link coefficient ``c``.
 
 ```math
-h_i(t) = h_0(t) \exp(c * id(m_i(t))) = \alpha/\theta ( t / \theta)^{\alpha -1} * exp(c * t^{a_i} * cos(b * t)^2).
+h_i(t) = h_0(t) \exp(c * id(m_i(t))) = \alpha/\theta ( t / \theta)^{\alpha -1} * \exp(c * t^{a_i} * \cos(b * t)^2).
 ```
 
 In code:
@@ -63,7 +63,7 @@ plot!(sm, r, t->ccdf(Weibull(1.2,100),t), label = "Baseline survival", color = :
 ```
 ![](fig/sm.png)
 
-To simulate longitudinal measurements ``y_{ij}`` for individual ``i`` at time ``t_ij`` we assume a multiplicative error ``y_{ij} \sim N(m_i(t_{ij}), \sigma * m_i(t_{ij}) ), \sigma = 0.1``. Simulate ``9`` longitudinal measurements and survival times for each individual:
+To simulate longitudinal measurements ``y_{ij}`` for individual ``i`` at time ``t_ij`` we assume a multiplicative error ``y_{ij} \sim N(m_i(t_{ij}), \sigma * m_i(t_{ij}) ), \sigma = 0.15``. Simulate ``9`` longitudinal measurements and survival times for each individual:
 ```julia
 σ = 0.15
 t_m = range(1,50,9)
@@ -95,7 +95,7 @@ using ReverseDiff
 Turing.setadbackend(:reversediff)
 Turing.setrdcache(true)
 
-@model function example_longitudinal(Y, t_m, T, Δ)
+@model function example_longitudinal(Y, t_m)
     n = length(Y)
     
     # longitudianl coef
@@ -114,7 +114,7 @@ Turing.setrdcache(true)
     end
 end
 
-longitudinal_chn = sample(example_longitudinal(Y, t_m, T, Δ), NUTS(), 200)
+longitudinal_chn = sample(example_longitudinal(Y, t_m), NUTS(), 200)
 posterior_means = summarize(longitudinal_chn)[:,2]
 a_hat = posterior_means[1:n]
 b_hat = posterior_means[101]
@@ -180,3 +180,20 @@ end
 
 joint_model_chn = sample(example_joint_model(Y, t_m, T, Δ), NUTS(), 100)
 ```
+
+
+## Link functions
+In the example above the identity link was used for simplicity. The julia ecosystem contains suitable options to explore link functions. For example we can use ForwardDiff to take derivatives of numeric julia functions:
+
+```julia
+using ForwardDiff
+f(x) = x^2
+Dxf(x) = ForwardDiff.derivative(x ->f(x), x) # first derivative
+Dx2f(x) = ForwardDiff.derivative(x ->Dxf(x), x) # second derivative
+plot(f, label = "f", title="Derivatives")
+plot!(Dxf, label = "f'")
+plot!(Dx2f, label = "f''")
+```
+![](fig/deriv.png)
+
+Another interesting module could be `DifferentialEquations.jl,` which allows to calculate ODEs and PEDs numerically.
