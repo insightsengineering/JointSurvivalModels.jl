@@ -8,7 +8,7 @@ JointModels.HazardBasedDistribution
 
 
 
-The `Distributions.jl` functionalities implemented for `HazardBasedDistribution`.
+The functionalities implemented for `HazardBasedDistribution`.
 
 ```@docs
 JointModels.support(dist::HazardBasedDistribution)

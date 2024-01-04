@@ -1,7 +1,7 @@
 name = "JointModels"
 uuid = "54f05ff3-c196-4f1a-acfd-0c2b8e4405db"
 authors = ["Yannik Ammann <ammanny@roche.com>"]
-version = "0.2.1"
+version = "0.2.2"
 
 [deps]
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
