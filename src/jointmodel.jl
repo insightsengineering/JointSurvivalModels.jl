@@ -61,6 +61,12 @@ GeneralJointModel(h₀, b, link_m) = GeneralJointModel(h₀, b, link_m, [0], [0]
 The `hazard` for `GeneralJointModel` calculates the hazard according to the formulation
 ``h(t) = h_0(t) \exp\left(b' \cdot L(M(t)) + \beta' \cdot x \right)``
 described in the documentation of `GeneralJointModel`
+
+# Example
+```
+my_joint_model = GeneralJointModel(identity, 0.01, identity)
+hazard(my_joint_model, 10)
+````
 """
 function hazard(jm::GeneralJointModel, t::Real)
     b, β, x, h₀ = jm.b, jm.β, jm.x, jm.h₀
