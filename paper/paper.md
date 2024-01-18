@@ -223,6 +223,8 @@ When sampling the posterior the logpdf function of the joint model is called con
 As well as allowing individual predictions by producing conditional survival graphs.
 --- show individual conditoined predictions
 
+![individual predictions](individual_prediction.svg)
+
 
 
 
