@@ -94,20 +94,14 @@ We denote the parameters for the joint model with $\theta =(\theta_H, \theta_J, 
 <!---
 \log L(Y | \theta) &= \log (\underbrace{\prod_{i\in[n]} L((\tau_i, \delta_i) | \theta)}_\text{\text{joint survival likelihood}} \underbrace{\prod_{i\in[n], j\in[n_i]} L((t_{ij},y_{ij} | \theta_L)}_{\text{longitudinal likeilhood}}
 -->
-$$
-\log L(Y | \theta) = \log (\prod_{i\in[n]} L((\tau_i, \delta_i) | \theta) \prod_{i\in[n], j\in[n_i]} L((t_{ij},y_{ij} | \theta_L))) \\
-=\sum_{i\in[n]} \log ( L((\tau_i, \delta_i) | \theta)) +  \sum_{i\in[n], j\in[n_i]} \log( L((t_{ij},y_{ij} | \theta_L) ))
-$$
+$$\log L(Y | \theta) = \log (\prod_{i\in[n]} L((\tau_i, \delta_i) | \theta) \prod_{i\in[n], j\in[n_i]} L((t_{ij},y_{ij} | \theta_L))) \\
+=\sum_{i\in[n]} \log ( L((\tau_i, \delta_i) | \theta)) +  \sum_{i\in[n], j\in[n_i]} \log( L((t_{ij},y_{ij} | \theta_L) ))$$
 For individual $i\in[n]$ let $f_i, S_i$ be the joint probability density function and survival function. The likelihood depends on the censoring process, for example for right-censored measurements $(\tau_i, \delta_i)$ is given by
-$$
-    \log ( L((\tau_i, \delta_i) | \theta)) = \log(f_i(\tau_i)^{\delta_i} S_i(\tau_i)^{1-\delta_i} \\
-    = \delta_i \log(f_i(\tau_i)) - (1-\delta_i)\int_0^{\tau_i} h_i(u) du
-$$
+$$\log ( L((\tau_i, \delta_i) | \theta)) = \log(f_i(\tau_i)^{\delta_i} S_i(\tau_i)^{1-\delta_i} \\
+    = \delta_i \log(f_i(\tau_i)) - (1-\delta_i)\int_0^{\tau_i} h_i(u) du$$
 
 For the longitudinal model the likelihood depends on the error process you use. Let $p_{m_i(t_{ij})}$ be the probability density function for measurements for model $m_i$ at time $t_{ij}$ for a given error, for example the standart error or a multiplicative error. Then the longitudinal likelihood is given by
-$$
-\log( L((t_{ij},y_{ij} | \theta_L) )) = \log(p_{m_i(t_{ij})}(y_{ij}))
-$$
+$$\log( L((t_{ij},y_{ij} | \theta_L) )) = \log(p_{m_i(t_{ij})}(y_{ij}))$$
 
 
 
