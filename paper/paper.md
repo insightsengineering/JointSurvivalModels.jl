@@ -38,14 +38,14 @@ aas-journal: Astrophysical Journal <- The name of the AAS journal.
 ---
 
 # Summary
-This software implements a numerical approach to define a distribution based on the description of the hazard function from survival analysis. In particual this allows to define joint models of time to even data and longitudinal measurements. Using numerical integraion the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation is capable of generating samples of joint models. This allows its use in simulations, which are common in Bayesian workflows [@BayesianWorkflow].
+This software implements a numerical approach to define a distribution based on the description of the hazard function from survival analysis. In particular this allows to define joint models of time to even data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation is able to generate samples of joint models. This allows its use in simulations, which are common in Bayesian workflows [@BayesianWorkflow].
 
 
 # Statement of need
 
 In biostatistics and clinical statistics, the joint modeling of longitudinal observations and time-to-event data is essential for a comprehensive understanding of biomedical phenomena [@Kerioui2020]. A distinct advantage of this software is its ability to use non-linear dynamics in longitudinal data analysis, a feature not available in comparable software. The complex relationships of biological processes and threshold effects often make the longitudinal model non-linear. The capability of working with non-linear joint models significantly enhances the modeling of intricate datasets where linear models fail to capture the nuances of the relationship between longitudinal and survival outcomes.
 
-The current landscape of software for joint models primarily consists of R packages such as JMbayes [@JMbayes], rstanarm [@rstanarm], joineR [@joineR], JM [@JM] or the SAS macros %JM [@SAS:JM] and %JMfit [@SAS:JMfit]. These packages typically limit the longitudinal model to linear or specific parametric forms. In contrast, this software allows the use of any longitudinal and survival model, provided the joint model fulfills continuity and certain smoothness characteristics for numerical procedures. Such flexibility is crucial for researching complex biological processes.
+The current landscape of software for joint models consists primarily of R packages such as JMbayes [@JMbayes], rstanarm [@rstanarm], joineR [@joineR], JM [@JM] or SAS macros. %JM [@SAS:JM] and %JMfit [@SAS:JMfit]. These packages typically limit the longitudinal model to linear or specific parametric forms. In contrast, this software allows the use of any longitudinal and survival model, provided the joint model fulfills continuity and certain smoothness characteristics for numerical procedures. Such flexibility is crucial for researching complex biological processes.
 
 # Formulation
 
@@ -54,7 +54,7 @@ To build a joint model, we augment the survival analysis hazard function $h(t) =
 
 $$ h(t) = h_0(t) \exp(b\cdot l(m(t))).$$
 
-The link $l$ is not a function over the reals. In general, the link is an operator on the longitudinal models. Some example of links as $l(m(t)) = (l \circ m)(t)$ are given in [@Kerioui2020] such as the derivative $\frac{d m(t)}{dt}$ or integral $\int_0^t m(u) \,du$ operators.
+The link $l$ is not a function over the reals. In general, the link is an operator on the longitudinal models. Some examples of links such as $l(m(t)) = (l \circ m)(t)$ are given in [@Kerioui2020] such as the derivative $\frac{d m(t)}{dt}$ or integral $\int_0^t m(u) \,du$ operators.
 
 
 Now we extend this idea to multiple longitudinal models. Suppose that we have $k\in \mathbb{N}$ longitudinal models $\{m_{1},\dots, m_{k}\}$ as well as $k$ link functions $\{l_{1},\dots, l_{k}\}$. Let $M: \mathbb{R} \to \mathbb{R}^k$ and $L:\mathbb{R}^k \to \mathbb{R}^k$ be the vector of functions
@@ -85,14 +85,15 @@ Note for nonlinear longitudinal models $\int_0^t h(u) du$ generally does not hav
 
 
 ## Likelihood calculations
-Suppose we have $n\in \mathbb{N}$ individuals. For each individual $i\in [n]$ we observe $n_i \in \mathbb{N}$ different longitudinal measurements $\{y_{i1}, \dots, y_{in_i}\}\subseteq \mathbb{R}$ at associated time points $\{t_{i1}, \dots, t_{in_i}\}\subseteq \mathbb{R}$ at which the measurements were recorded. In addition, we measure an event time $\tau_i \in \mathbb{R}$ and an event indicator $\delta_i \in \{0,1\}$. Here we will consider right-censored data, this can be adapted to other censoring processes. Let $Y_i := (\tau_i,\delta_i,(y_{i1}, \dots, y_{in_i}),(t_{i1}, \dots, t_{in_i}))$ be the measurements associated with individual $i\in [n]$ and $Y = \{Y_1, \dots, Y_n\}$ all observations.
+
+Suppose that we have $n\in \mathbb{N}$ individuals. For each individual $i\in [n]$ we observe $n_i \in \mathbb{N}$ different longitudinal measurements $\{y_{i1}, \dots, y_{in_i}\}\subseteq \mathbb{R}$ at associated time points $\{t_{i1}, \dots, t_{in_i}\}\subseteq \mathbb{R}$ at which the measurements were recorded. In addition, we measure an event time $\tau_i \in \mathbb{R}$ and an event indicator $\delta_i \in \{0,1\}$. Here we will consider right-censored data; this can be adapted to other censoring processes. Let $Y_i := (\tau_i,\delta_i,(y_{i1}, \dots, y_{in_i}),(t_{i1}, \dots, t_{in_i}))$ be the measurements associated with individual $i\in [n]$ and $Y = \{Y_1, \dots, Y_n\}$ all observations.
 
 
 We denote the parameters for the joint model with $\theta =(\theta_H, \theta_J, \theta_L)$, where $\theta_H$ describes the parameters for the baseline hazard, $\theta_J$ for the joint model, and $\theta_L$ for longitudinal models. The likelihood of the generalized joint model is comprised of the likelihood of the survival measurements and the longitudinal measurements.
 
 
 <!---
-\log L(Y | \theta) &= \log (\underbrace{\prod_{i\in[n]} L((\tau_i, \delta_i) | \theta)}_\text{\text{joint survival likelihood}} \underbrace{\prod_{i\in[n], j\in[n_i]} L((t_{ij},y_{ij} | \theta_L)}_{\text{longitudinal likeilhood}}
+\log L(Y | \theta) &= \log (\underbrace{\prod_{i\in[n]} L((\tau_i, \delta_i) | \theta)}_\text{\text{joint survival likelihood}} \underbrace{\prod_{i\in[n], j\in[n_i]} L((t_{ij},y_{ij} | \theta_L)}_{\text{longitudinal likelihood}}
 -->
 $$\log L(Y | \theta) = \log (\prod_{i\in[n]} L((\tau_i, \delta_i) | \theta) \prod_{i\in[n], j\in[n_i]} L((t_{ij},y_{ij} | \theta_L))) \\
 =\sum_{i\in[n]} \log ( L((\tau_i, \delta_i) | \theta)) +  \sum_{i\in[n], j\in[n_i]} \log( L((t_{ij},y_{ij} | \theta_L) ))$$
@@ -100,7 +101,7 @@ For individual $i\in[n]$ let $f_i, S_i$ be the joint probability density functio
 $$\log ( L((\tau_i, \delta_i) | \theta)) = \log(f_i(\tau_i)^{\delta_i} S_i(\tau_i)^{1-\delta_i} \\
     = \delta_i \log(f_i(\tau_i)) - (1-\delta_i)\int_0^{\tau_i} h_i(u) du$$
 
-For the longitudinal model the likelihood depends on the error process you use. Let $p_{m_i(t_{ij})}$ be the probability density function for measurements for model $m_i$ at time $t_{ij}$ for a given error, for example the standart error or a multiplicative error. Then the longitudinal likelihood is given by
+For the longitudinal model, the likelihood depends on the error process you use. Let $p_{m_i(t_{ij})}$ be the probability density function for measurements for model $m_i$ at time $t_{ij}$ for a given error, for example, the standard error or a multiplicative error. Then the longitudinal likelihood is given by
 $$\log( L((t_{ij},y_{ij} | \theta_L) )) = \log(p_{m_i(t_{ij})}(y_{ij}))$$
 
 
@@ -110,7 +111,7 @@ $$\log( L((t_{ij},y_{ij} | \theta_L) )) = \log(p_{m_i(t_{ij})}(y_{ij}))$$
 
 # Example
 
-The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models. It follows the simulation study from [@Keioui2020]. They specify a longitudinal model for $\Psi = (\text{BSLD}, g, d, \phi) \in \mathbb{R}^4$ as
+The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models. It follows the simulation study by [@Keioui2020]. They specify a longitudinal model for $\Psi = (\text{BSLD}, g, d, \phi) \in \mathbb{R}^4$ as
 $$\text{SLD}(t,\Psi) = \begin{cases}
     \text{BSLD}\exp(gt) & t < t_x \\
     \text{BSLD}\exp(gt_x) (\phi \exp(-d(t-t_x)) + (1-\phi)\exp(g(t-t_x))) & t \geq t_x.
@@ -140,14 +141,14 @@ The parameters $\Psi$ for the longitudinal model depend on the individual $i$ re
 $$
 h_i(t) = h_0(t) \exp(b * \text{SLD}(t, \Psi)).
 $$
-In code the distribution of the joint model that is defined by this hazard is given by:
+In code the distribution of the joint model defined by this hazard is given by:
 ```julia
 my_jm(κ, λ, b, Ψ, tx) = GeneralJointModel(t -> h_0(t, κ, λ), b, t -> sld(t, Ψ, tx))
 ```
 
-The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and mixed effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega, \Omega = (\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For biological constraints the parameters were transformed such that $\phi_q(\Psi_{q,i}) = \phi_q\mu_q + \eta_{q,i}$ for $q\in \{\text{BSLD}, d, g, \phi\}$. For $\text{BSLD}, g, d$ a log-normal $(\phi = log)$ transform was assumed and for $\phi$ a logit-normal $(\sigma = \text{logit})$.
+The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and mixed effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega, \Omega = (\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For biological constraints, the parameters were transformed such that $\phi_q(\Psi_{q,i}) = \phi_q\mu_q + \eta_{q,i}$ for $q\in \{\text{BSLD}, d, g, \phi\}$. For $\text{BSLD}, g, d$ a log-normal $(\phi = log)$ transform was assumed and for $\phi$ a logit-normal $(\sigma = \text{logit})$.
 
-With this information a Bayesian model can be specified in Turing.jl [@Turing.jl] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the software is used. This results in a canonical translation of the statistical ideas into code. For the longitudinal data a multiplicative error model using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from [@Kerioui2020] implemented in code:
+With this information, a Bayesian model can be specified in Turing.jl [@Turing.jl] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the software is used. This results in a canonical translation of the statistical ideas into code. For longitudinal data, a multiplicative error model is used using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from [@Kerioui2020] implemented in code:
 
 ```julia
 @model function identity_link(longit_ids, longit_times, longit_measurements, surv_ids, surv_times, surv_event)
@@ -215,12 +216,11 @@ With this information a Bayesian model can be specified in Turing.jl [@Turing.jl
     end
 end
 ```
-When sampling the posterior the logpdf function of the joint model is called conditioned on specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Additionally the implementation of generating random samples of a joint distribution enables Turing.jl [@Turing.jl] to sample a joint distribution. This allows to create posterior predictive checks or simulations which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
+When sampling the posterior the log probability density function of the joint model is called conditioned on specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Additionally, the implementation of generating random samples of a joint distribution enables Turing.jl [@Turing.jl] to sample a joint distribution. This allows to create posterior predictive checks or simulations, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
 
 ![Individual posterior predictions \label{fig:ind_pred}](individual_prediction.svg)
 
-The figure \autoref{fig:ind_pred} showcases posterior predictions for the mixed effects longitudinal sub model along side the longitudinal observations for a spesific individual. The figure also shows the individual survival predictions conditioned on survival until the last measurement based on the joint survival distribution. The light collored ribbons represent the 95% quantile of the posterior predictions while the line represtns the median. To create the posterior predictions the above Turing.jl [@Turing.jl] model was used.
-
+The figure \autoref{fig:ind_pred} showcases posterior predictions for the mixed effects longitudinal sub model along side the longitudinal observations for a specific individual. The figure also shows the individual survival predictions conditioned on survival until the last measurement based on the joint survival distribution. The light colored ribbons represent the 95% quantile of the posterior predictions while the line represtns the median. To create the posterior predictions the above Turing.jl [@Turing.jl] model was used.
 
 
 
