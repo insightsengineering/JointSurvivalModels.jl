@@ -18,11 +18,11 @@ authors:
     affiliation: 2
   - name: Author with no affiliation
     corresponding: true # (This is how to denote the corresponding author)
-    affiliation: 3
+    affiliation: 2
   - given-names: Ludwig
     dropping-particle: van
     surname: Beethoven
-    affiliation: 3
+    affiliation: 2
 affiliations:
  - name: ETH Zürich, Switzerland
    index: 1
@@ -37,14 +37,15 @@ aas-doi: 10.3847/xxxxx <- update this with the DOI from AAS once you know it.
 aas-journal: Astrophysical Journal <- The name of the AAS journal.
 ---
 
+# Summary
+This software implements a numerical approach to define a distribution based on the description of the hazard function from survival analysis. In particual this allows to define joint models of time to even data and longitudinal measurements. Using numerical integraion the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation is capable of generating samples of joint models. This allows its use in simulations, which are common in Bayesian workflows [@BayesianWorkflow].
+
 
 # Statement of need
 
-In biostatistics and clinical statistics, the joint modeling of longitudinal observations and time-to-event data is essential for a comprehensive understanding of biomedical phenomena [@Kerioui2020]. This software implements a numerical approach for the distribution of joint models, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters.
+In biostatistics and clinical statistics, the joint modeling of longitudinal observations and time-to-event data is essential for a comprehensive understanding of biomedical phenomena [@Kerioui2020]. A distinct advantage of this software is its ability to use non-linear dynamics in longitudinal data analysis, a feature not available in comparable software. The complex relationships of biological processes and threshold effects often make the longitudinal model non-linear. The capability of working with non-linear joint models significantly enhances the modeling of intricate datasets where linear models fail to capture the nuances of the relationship between longitudinal and survival outcomes.
 
-A distinct advantage of this software is its ability to use non-linear dynamics in longitudinal data analysis, a feature not available in comparable software. The complex relationships of biological processes and threshold effects often make the longitudinal model non-linear. The capability of working with non-linear joint models significantly enhances the modeling of intricate datasets where linear models fail to capture the nuances of the relationship between longitudinal and survival outcomes.
-
-The current landscape of software for joint models primarily consists of R packages such as JMbayes [@JMbayes], rstanarm [@rstanarm], joineR [@joineR], JM [@JM] or the SAS macros %JM [@SAS:JM] and %JMfit [@SAS:JMfit]. These packages typically limit the longitudinal model to linear or specific parametric forms. In contrast, this software allows the use of any longitudinal and survival model, provided the joint model fulfills continuity and certain smoothness characteristics for numerical procedures. Such flexibility is crucial for researching complex biological processes. Additionally, this implementation is capable of generating samples of joint models. This allows its use in simulations, which are common in Bayesian workflows [@BayesianWorkflow].
+The current landscape of software for joint models primarily consists of R packages such as JMbayes [@JMbayes], rstanarm [@rstanarm], joineR [@joineR], JM [@JM] or the SAS macros %JM [@SAS:JM] and %JMfit [@SAS:JMfit]. These packages typically limit the longitudinal model to linear or specific parametric forms. In contrast, this software allows the use of any longitudinal and survival model, provided the joint model fulfills continuity and certain smoothness characteristics for numerical procedures. Such flexibility is crucial for researching complex biological processes.
 
 # Formulation
 
@@ -161,6 +162,7 @@ With this information a Bayesian model can be specified in Turing.jl [@Turing.jl
     # number of longitudinal and survival measurements
     n = length(surv_ids)
     m = length(longit_ids)
+
     # ---------------- Priors -----------------
     ## priors longitudinal
     # μ priors, population parameters
@@ -210,20 +212,20 @@ With this information a Bayesian model can be specified in Turing.jl [@Turing.jl
     end
     # add the likelihood of the survival model with link
     baseline_hazard(t) = h_0(t, κ, λ)
-    for id in 1:n
+    for i in 1:n
+        id = Int(surv_ids[i])
         id_link(t) = sld(t, Ψ[id], tx)
         censoring = Bool(surv_event[id]) ? Inf : surv_times[id]
-        surv_times[individual] ~ censored(GeneralJointModel(baseline_hazard, β, id_link), upper = censoring)
+        # here we use the GeneralJointModel
+        surv_times[i] ~ censored(GeneralJointModel(baseline_hazard, β, id_link), upper = censoring)
     end
 end
 ```
 When sampling the posterior the logpdf function of the joint model is called conditioned on specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Additionally the implementation of generating random samples of a joint distribution enables Turing.jl [@Turing.jl] to sample a joint distribution. This allows to create posterior predictive checks or simulations which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
 
---- show plots of kaplan-meier and posterior joint distribution survival
-As well as allowing individual predictions by producing conditional survival graphs.
---- show individual conditoined predictions
+![Individual posterior predictions \label{fig:ind_pred}](individual_prediction.svg)
 
-![individual predictions](individual_prediction.svg)
+The figure \autoref{fig:ind_pred} showcases posterior predictions for the mixed effects longitudinal sub model along side the longitudinal observations for a spesific individual. The figure also shows the individual survival predictions conditioned on survival until the last measurement based on the joint survival distribution. The light collored ribbons represent the 95% quantile of the posterior predictions while the line represtns the median. To create the posterior predictions the above Turing.jl [@Turing.jl] model was used.
 
 
 
@@ -258,10 +260,7 @@ As well as allowing individual predictions by producing conditional survival gra
 
 
 
-
-
-
-
+<!--
 
 # Summary
 
@@ -342,4 +341,5 @@ Figure sizes can be customized by adding an optional second parameter:
 We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
 Oh, and support from Kathryn Johnston during the genesis of this project.
 
+-->
 # References
