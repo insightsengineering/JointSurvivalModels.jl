@@ -1,6 +1,6 @@
 # Hazard Based Distributions
 
-Custom distribution type
+Abstract type describing a distribution based on the hazard funciton.
 
 ```@docs
 JointModels.HazardBasedDistribution
