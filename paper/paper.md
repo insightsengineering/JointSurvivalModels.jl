@@ -26,7 +26,7 @@ authors:
 affiliations:
  - name: ETH Zürich, Switzerland
    index: 1
- - name: Roche
+ - name: Hoffmann-La Roche Ltd.
    index: 2
 date: 02 February 2022
 bibliography: paper.bib
