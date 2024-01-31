@@ -20,7 +20,7 @@ Example:
 ```julia
 constant_alpha(x) = 2
 b = 0.01
-GeneralJointModel(constant, b, cos)
+jm = GeneralJointModel(constant_alpha, b, cos)
 ```
 
 For the numeric calculation for the distribution a default support (0,10'000) is assumed. In particular the first events happen after $0$ and the interval (0,10'000) should contain nearly all of the probability mass of the target distribution. If you have different starting times for events or a time horizon that exeeds 10'000 then you can manually adjust the support, see [support in Hazard Based Distribution](@ref HazardBasedDistribution)
