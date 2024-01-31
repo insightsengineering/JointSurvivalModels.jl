@@ -38,7 +38,7 @@ aas-journal: Astrophysical Journal <- The name of the AAS journal.
 ---
 
 # Summary
-This software implements a numerical approach to define a distribution based on the description of the hazard function from survival analysis. In particular this allows to define joint models of time to even data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation is able to generate samples of joint models. This allows its use in simulations, which are common in Bayesian workflows [@BayesianWorkflow].
+This software implements a numerical approach to define a distribution based on the description of the hazard function from survival analysis. In particular this allows to define joint models of time-to-even data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation is able to generate samples of joint models. This allows its use in simulations, which are common in Bayesian workflows [@BayesianWorkflow].
 
 
 # Statement of need
@@ -50,11 +50,11 @@ The current landscape of software for joint models consists primarily of R packa
 # Formulation
 
 
-To build a joint model, we augment the survival analysis hazard function $h(t) = \lim_{\delta \to 0} \frac{P(t\leq T\leq t+\delta | T \geq t)}{\delta}$ by incorporating a link $l$ to a longitudinal process. The longitudinal process is modeled by a function $m:\mathbb{R} \to \mathbb{R}$, for example a non-linear mixed effects model [@Kerioui2020]. Let the function $h_0:\mathbb{R} \to \mathbb{R}$ describe a baseline hazard and $b\in\mathbb{R}$ be a coefficient of the link contribution. The hazard of the joint model is
+To build a joint model, we augment the survival analysis hazard function $h(t) = \lim_{\delta \to 0} P(t\leq T\leq t+\delta | T \geq t)/\delta$ by incorporating a link $l$ to a longitudinal process. The longitudinal process is modeled by a function $m:\mathbb{R} \to \mathbb{R}$, for example a non-linear mixed effects model [@Kerioui2020]. Let the function $h_0:\mathbb{R} \to \mathbb{R}$ describe a baseline hazard and $b\in\mathbb{R}$ be a coefficient of the link contribution. The hazard of the joint model is
 
 $$ h(t) = h_0(t) \exp(b\cdot l(m(t))).$$
 
-The link $l$ is not a function over the reals. In general, the link is an operator on the longitudinal models. Some examples of links such as $l(m(t)) = (l \circ m)(t)$ are given in [@Kerioui2020] such as the derivative $\frac{d m(t)}{dt}$ or integral $\int_0^t m(u) \,du$ operators.
+The link $l$ is not a function over the reals. In general, the link is an operator on the longitudinal models. Some examples of links such as $l(m(t)) = (l \circ m)(t)$ are given in [@Kerioui2020] such as the derivative $d/dt m(t)$ or integral $\int_0^t m(u) \, du$ operators.
 
 
 Now we extend this idea to multiple longitudinal models. Suppose that we have $k\in \mathbb{N}$ longitudinal models $\{m_{1},\dots, m_{k}\}$ as well as $k$ link functions $\{l_{1},\dots, l_{k}\}$. Let $M: \mathbb{R} \to \mathbb{R}^k$ and $L:\mathbb{R}^k \to \mathbb{R}^k$ be the vector of functions
@@ -67,42 +67,40 @@ $$
     \mu_1 \\ \mu_2 \\ \dots \\ \mu_k
 \end{pmatrix} \mapsto \begin{pmatrix}
     l_1(\mu_1) \\ l_2(\mu_2) \\ \dots \\ l_k(\mu_k)
-\end{pmatrix} \text{ and } L(M(t)) =\begin{pmatrix}
-    l_1(m_{1}(t)) \\ l_2(m_{2}(t)) \\ \dots \\ l_k(m_{k}(t))
-\end{pmatrix}.
+\end{pmatrix} 
 $$
+and together
+$$L(M(t)) =\begin{pmatrix}
+    l_1(m_{1}(t)) \\ l_2(m_{2}(t)) \\ \dots \\ l_k(m_{k}(t))
+\end{pmatrix}.$$
 
 For the link vector $L(M(t))$ we consider the coefficient vector $b \in \mathbb{R}^k$. Then we formulate the hazard as follows.
 
-$$h(t) = h_0(t) \exp\left(\sum_{j\in [k]}b_{j} l_j(m_{j}(t))  \right) = h_0(t) \exp(b' \cdot L(M(t))).$$
+$$h(t) = h_0(t) \exp\left(\sum_{j\in [k]}b_{j} l_j(m_{j}(t))  \right) = h_0(t) \exp(b^\top \cdot L(M(t))).$$
 
 In addition, we consider covariates $x\in \mathbb{R}^l, l\in\mathbb{N}$ and coefficients $\beta \in \mathbb{R}^l$. This results in the hazard
-$$h(t) = h_0(t) \exp\left(b' \cdot L(M(t)) +  \beta' \cdot x \right).$$
+$$h(t) = h_0(t) \exp\left(b^\top \cdot L(M(t)) +  \beta^\top \cdot x \right).$$
 
 The probability density function in survival analysis can be described by
-$$f(t) = h(t) * exp(-\int_0^t h(u) du).$$
-Note for nonlinear longitudinal models $\int_0^t h(u) du$ generally does not have a analytic form, thus numerical integration is required.
+$$f(t) = h(t) * \exp\left(-\int_0^t h(u) \, du\right).$$
+Note for nonlinear longitudinal models $\int_0^t h(u) \, du$ generally does not have a analytic form, thus numerical integration is required.
 
 
 ## Likelihood calculations
 
-Suppose that we have $n\in \mathbb{N}$ individuals. For each individual $i\in [n]$ we observe $n_i \in \mathbb{N}$ different longitudinal measurements $\{y_{i1}, \dots, y_{in_i}\}\subseteq \mathbb{R}$ at associated time points $\{t_{i1}, \dots, t_{in_i}\}\subseteq \mathbb{R}$ at which the measurements were recorded. In addition, we measure an event time $\tau_i \in \mathbb{R}$ and an event indicator $\delta_i \in \{0,1\}$. Here we will consider right-censored data; this can be adapted to other censoring processes. Let $Y_i := (\tau_i,\delta_i,(y_{i1}, \dots, y_{in_i}),(t_{i1}, \dots, t_{in_i}))$ be the measurements associated with individual $i\in [n]$ and $Y = \{Y_1, \dots, Y_n\}$ all observations.
+Suppose that we have $n\in \mathbb{N}$ individuals. For each individual $i\in [n]=\{1,\dots, n\}$ we observe $n_i \in \mathbb{N}$ different longitudinal measurements $\{y_{i1}, \dots, y_{in_i}\}\subseteq \mathbb{R}$ at associated time points $\{t_{i1}, \dots, t_{in_i}\}\subseteq \mathbb{R}$ at which the measurements were recorded. In addition, we measure an event time $\tau_i \in \mathbb{R}$ and an event indicator $\delta_i \in \{0,1\}$. Without loss of generality we will consider right-censored data; this can be adapted to other censoring processes. Let $Y_i := (\tau_i,\delta_i,(y_{i1}, \dots, y_{in_i}),(t_{i1}, \dots, t_{in_i}))$ be the measurements associated with individual $i\in [n]$ and $Y = \{Y_1, \dots, Y_n\}$ all observations.
 
 
 We denote the parameters for the joint model with $\theta =(\theta_H, \theta_J, \theta_L)$, where $\theta_H$ describes the parameters for the baseline hazard, $\theta_J$ for the joint model, and $\theta_L$ for longitudinal models. The likelihood of the generalized joint model is comprised of the likelihood of the survival measurements and the longitudinal measurements.
 
 
-<!---
-\log L(Y | \theta) &= \log (\underbrace{\prod_{i\in[n]} L((\tau_i, \delta_i) | \theta)}_\text{\text{joint survival likelihood}} \underbrace{\prod_{i\in[n], j\in[n_i]} L((t_{ij},y_{ij} | \theta_L)}_{\text{longitudinal likelihood}}
--->
-$$\log L(Y | \theta) = \log (\prod_{i\in[n]} L((\tau_i, \delta_i) | \theta) \prod_{i\in[n], j\in[n_i]} L((t_{ij},y_{ij} | \theta_L))) \\
-=\sum_{i\in[n]} \log ( L((\tau_i, \delta_i) | \theta)) +  \sum_{i\in[n], j\in[n_i]} \log( L((t_{ij},y_{ij} | \theta_L) ))$$
+
+$$\log L(Y | \theta) \propto \sum_{i\in[n]} \log ( L((\tau_i, \delta_i) | \theta)) +  \sum_{i\in[n], j\in[n_i]} \log( L(t_{ij},y_{ij} | \theta_L) )$$
 For individual $i\in[n]$ let $f_i, S_i$ be the joint probability density function and survival function. The likelihood depends on the censoring process, for example for right-censored measurements $(\tau_i, \delta_i)$ is given by
-$$\log ( L((\tau_i, \delta_i) | \theta)) = \log(f_i(\tau_i)^{\delta_i} S_i(\tau_i)^{1-\delta_i} \\
-    = \delta_i \log(f_i(\tau_i)) - (1-\delta_i)\int_0^{\tau_i} h_i(u) du$$
+$$\log ( L((\tau_i, \delta_i) | \theta)) = \delta_i \log(f_i(\tau_i)) - (1-\delta_i)\int_0^{\tau_i} h_i(u) du$$
 
 For the longitudinal model, the likelihood depends on the error process you use. Let $p_{m_i(t_{ij})}$ be the probability density function for measurements for model $m_i$ at time $t_{ij}$ for a given error, for example, the standard error or a multiplicative error. Then the longitudinal likelihood is given by
-$$\log( L((t_{ij},y_{ij} | \theta_L) )) = \log(p_{m_i(t_{ij})}(y_{ij}))$$
+$$\log( L(t_{ij},y_{ij} | \theta_L)) = \log(p_{m_i(t_{ij})}(y_{ij}))$$
 
 
 
@@ -111,12 +109,11 @@ $$\log( L((t_{ij},y_{ij} | \theta_L) )) = \log(p_{m_i(t_{ij})}(y_{ij}))$$
 
 # Example
 
-The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models. It follows the simulation study by [@Keioui2020]. They specify a longitudinal model for $\Psi = (\text{BSLD}, g, d, \phi) \in \mathbb{R}^4$ as
+The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models using `JointModels.jl`. It follows the simulation study by [@Keioui2020]. They specify a longitudinal model for $\Psi = (\text{BSLD}, g, d, \phi) \in \mathbb{R}^4$ as
 $$\text{SLD}(t,\Psi) = \begin{cases}
     \text{BSLD}\exp(gt) & t < t_x \\
     \text{BSLD}\exp(gt_x) (\phi \exp(-d(t-t_x)) + (1-\phi)\exp(g(t-t_x))) & t \geq t_x.
-\end{cases}
-$$
+\end{cases}$$
 In code:
 
 ```julia
@@ -131,28 +128,28 @@ function sld(t, Ψ, tx = 0.0)
 end
 ```
 
-They use a baseline Weibull hazard $h_0(t) =\frac{\kappa}{\lambda}(\frac{t}{\lambda})^{\kappa-1}$ and the identity function as link.
+They use a baseline Weibull hazard $h_0(t) =\kappa / \lambda * (t/\lambda)^{\kappa-1}$ and the identity function as link.
 
 ```julia
 h_0(t, κ, λ) = κ/λ * (t/λ)^(κ - 1)
 ```
 
 The parameters $\Psi$ for the longitudinal model depend on the individual $i$ resulting in the joint hazard
-$$
-h_i(t) = h_0(t) \exp(b * \text{SLD}(t, \Psi)).
-$$
+
+$$h_i(t) = h_0(t) \exp(b * \text{SLD}(t, \Psi)).$$
+
 In code the distribution of the joint model defined by this hazard is given by:
 ```julia
 my_jm(κ, λ, b, Ψ, tx) = GeneralJointModel(t -> h_0(t, κ, λ), b, t -> sld(t, Ψ, tx))
 ```
 
-The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and mixed effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega, \Omega = (\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For biological constraints, the parameters were transformed such that $\phi_q(\Psi_{q,i}) = \phi_q\mu_q + \eta_{q,i}$ for $q\in \{\text{BSLD}, d, g, \phi\}$. For $\text{BSLD}, g, d$ a log-normal $(\phi = log)$ transform was assumed and for $\phi$ a logit-normal $(\sigma = \text{logit})$.
+The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and mixed effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega), \Omega = (\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For biological constraints, the parameters were transformed such that $\phi_q(\Psi_{q,i}) = \phi_q\mu_q + \eta_{q,i}$ for $q\in \{\text{BSLD}, d, g, \phi\}$. For $\text{BSLD}, g, d$ a log-normal $(\phi = log)$ transform was assumed and for $\phi$ a logit-normal $(\sigma = \text{logit})$.
 
-With this information, a Bayesian model can be specified in Turing.jl [@Turing.jl] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the software is used. This results in a canonical translation of the statistical ideas into code. For longitudinal data, a multiplicative error model is used using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from [@Kerioui2020] implemented in code:
+With this information, a Bayesian model can be specified in Turing.jl [@Turing.jl] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the software is used. This results in a canonical translation of the statistical ideas into code. For longitudinal data, a multiplicative error model is used using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from [@Kerioui2020] can be implemented as follows in code:
 
 ```julia
 @model function identity_link(longit_ids, longit_times, longit_measurements, surv_ids, surv_times, surv_event)
-    # treatment at study star
+    # treatment at study start
     tx = 0.0
     # number of longitudinal and survival measurements
     n = length(surv_ids)
