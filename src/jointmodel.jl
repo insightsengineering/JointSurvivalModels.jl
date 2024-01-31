@@ -40,7 +40,6 @@ struct GeneralJointModel<:HazardBasedDistribution
     link_m::Vector{Function}
     β::Vector
     x::Vector
-    """
     function GeneralJointModel(h₀, b, link_m, β, x)
         # Usability: this allows using singular variables and function instead of arrays
         if !(typeof(link_m) <: Vector) && !(typeof(b) <: Vector)
@@ -53,7 +52,6 @@ struct GeneralJointModel<:HazardBasedDistribution
         end
         new(h₀, b, link_m, β, x)
     end
-    """
 end
 
 # Constructor that allows to ommit covariates
@@ -61,6 +59,7 @@ GeneralJointModel(h₀, b, link_m) = GeneralJointModel(h₀, b, link_m, [0], [0]
 
 
 # Constructor that allows to use singular variables and function instead of arrays
+"""
 function GeneralJointModel(h₀, b, link_m, β, x)
     if !(typeof(link_m) <: Vector) && !(typeof(b) <: Vector)
         link_m = [link_m]
@@ -72,6 +71,7 @@ function GeneralJointModel(h₀, b, link_m, β, x)
     end
     return GeneralJointModel(h₀, b, link_m, β, x)
 end
+"""
 
 
 @doc raw"""
