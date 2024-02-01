@@ -3,32 +3,22 @@ title: 'JointModels.jl: Numeric approach to joint models'
 tags:
   - Julia
   - Joint Model
-  - biostatistics
+  - Biostatistics
   - Survival analysis
   - Bayesian statistics
 authors:
   - name: Yannik Ammann
     affiliation: "1, 2"
-  - name: Adrian M. Price-Whelan
+  - name: Daniel, Francois & Doug
     orcid: 0000-0000-0000-0000
     equal-contrib: true
-    affiliation: "1, 2" # (Multiple affiliations must be quoted)
-  - name: Author Without ORCID
-    equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
-    affiliation: 2
-  - name: Author with no affiliation
-    corresponding: true # (This is how to denote the corresponding author)
-    affiliation: 2
-  - given-names: Ludwig
-    dropping-particle: van
-    surname: Beethoven
     affiliation: 2
 affiliations:
  - name: ETH Zürich, Switzerland
    index: 1
  - name: Hoffmann-La Roche Ltd.
    index: 2
-date: 02 February 2022
+date: 02 February 2024
 bibliography: paper.bib
 
 # Optional fields if submitting to a AAS journal too, see this blog post:
@@ -237,7 +227,7 @@ parameters        mean        std      mcse       rhat  |  ture_parameters
          λ   1393.6532   286.6294   15.9133     0.0059  |      1450
          γ      0.0103     0.0012    0.0001     0.0005  |         0.01
 ```
-Notice that the link coefficient $\gamma$ was sampled around the true value with a narrow variance. In general the survival parameters are well represented by the posterior samples. The mixed effects model parameters as well indicated by the $\hat r$ value which is close to one, with potential exception of $\mu_d$.
+Notice that the link coefficient $\gamma$ was sampled around the true value with a narrow variance. In general the survival parameters are well represented by the posterior samples. The mixed effects model parameters as well indicated by the $\hat r$ value which is close to one, with the potential exception of $\mu_d$.
 
 
 Additionally, `JointModels.jl` implements the generation of random samples of a joint distribution which enables `Turing.jl` [@Turing.jl] to sample a joint distribution. This allows to create posterior predictive checks or simulations, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
@@ -249,7 +239,9 @@ The figure \autoref{fig:ind_pred} showcases posterior predictions for the mixed 
 
 
 
+# Acknowledgements
 
+# References
 
 
 
@@ -355,10 +347,9 @@ and referenced from text using \autoref{fig:example}.
 Figure sizes can be customized by adding an optional second parameter:
 ![Caption for example figure.](figure.png){ width=20% }
 
-# Acknowledgements
+
 
 We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
 Oh, and support from Kathryn Johnston during the genesis of this project.
 
 -->
-# References
