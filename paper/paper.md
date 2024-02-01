@@ -57,7 +57,7 @@ To build a joint model, we augment the survival analysis hazard function $h(t) =
 
 $$ h(t) = h_0(t) \exp(b\cdot l(m(t))).$$
 
-The link $l$ is not a function over the reals. In general, the link is an operator on the longitudinal models. Some examples of links such as $l(m(t)) = (l \circ m)(t)$ are given in [@Kerioui2020] such as the derivative $d/dt m(t)$ or integral $\int_0^t m(u) \, du$ operators.
+The link $l$ is not a function over the reals. In general, the link is an operator on the longitudinal models. Some examples of links such as $l(m(t)) = (l \circ m)(t)$ are given in [@Kerioui2020] such as the derivative $\frac{d}{dt} m(t)$ or integral $\int_0^t m(u) \, du$ operators.
 
 
 Now we extend this idea to multiple longitudinal models. Suppose that we have $k\in \mathbb{N}$ longitudinal models $\{m_{1},\dots, m_{k}\}$ as well as $k$ link functions $\{l_{1},\dots, l_{k}\}$. Let $M: \mathbb{R} \to \mathbb{R}^k$ and $L:\mathbb{R}^k \to \mathbb{R}^k$ be the vector of functions
@@ -85,7 +85,7 @@ In addition, we consider covariates $x\in \mathbb{R}^l, l\in\mathbb{N}$ and coef
 $$h(t) = h_0(t) \exp\left(b^\top \cdot L(M(t)) +  \beta^\top \cdot x \right).$$
 
 The probability density function in survival analysis can be described by
-$$f(t) = h(t) * \exp\left(-\int_0^t h(u) \, du\right).$$
+$$f(t) = h(t) \exp\left(-\int_0^t h(u) \, du\right).$$
 Note for nonlinear longitudinal models $\int_0^t h(u) \, du$ generally does not have a analytic form, thus numerical integration is required.
 
 
