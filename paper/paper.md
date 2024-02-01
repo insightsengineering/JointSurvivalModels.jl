@@ -47,7 +47,7 @@ Over the last decade, there has been a growing interest in joint models for long
 
 In oncology, it is well known that the individual risk of death depends on the treatment-induced changes in tumor size over time [@Tardivon2019]. Because pharmacologic effects are typically transient, nonlinear mixed-effect models are required to capture central tendency and inter-individual variability in tumor size, while parametric models can be used for analysing time to death. Joint models have been used in other therapeutic areas such as neurology [Khnel2021], cardiovascular disease [KassahunYimer2020], or infection diseases [@Wu2007].
 
-The current landscape of open-source software allowing end-users to easily fit and use joint models consists primarily of R packages such as JMbayes [@JMbayes], rstanarm [@rstanarm], joineR [@joiner], or JM [@jm]. These packages typically limit the longitudinal model to linear forms (for the parameters) preventing users from fitting joint models with saturating biological processes resulting in nonlinear profiles for the biomarker.
+The current landscape of open-source software allowing end-users to easily fit and use joint models consists primarily of R packages such as JMbayes [@JMbayes], rstanarm [@rstanarm], joineR [@joineR], or JM [@JM]. These packages typically limit the longitudinal model to linear forms (for the parameters) preventing users from fitting joint models with saturating biological processes resulting in nonlinear profiles for the biomarker.
 In contrast, the present software supports fitting any longitudinal and survival model, provided the joint model fulfills continuity and certain smoothness characteristics for numerical procedures. Such flexibility is crucial for studying complex biological processes.
 
 # Formulation
@@ -112,7 +112,7 @@ $$\log( L(t_{ij},y_{ij} | \theta_L)) = \log(p_{m_i(t_{ij})}(y_{ij}))$$
 
 # Example
 
-The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models using `JointModels.jl`. It follows the simulation study by [@Keioui2020]. They specify a longitudinal model for $\Psi = (\text{BSLD}, g, d, \phi) \in \mathbb{R}^4$ as
+The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models using `JointModels.jl`. It follows the simulation study by [@Kerioui2020]. They specify a longitudinal model for $\Psi = (\text{BSLD}, g, d, \phi) \in \mathbb{R}^4$ as
 
 $$\text{SLD}(t,\Psi) = \begin{cases}
     \text{BSLD}\exp(gt) & t < t_x \\
@@ -153,7 +153,8 @@ The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}}
 With this information, a Bayesian model can be specified in Turing.jl [@Turing.jl] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the software is used. This results in a canonical translation of the statistical ideas into code. For longitudinal data, a multiplicative error model is used using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from [@Kerioui2020] can be implemented as follows in code:
 
 ```julia
-@model function identity_link(longit_ids, longit_times, longit_measurements, surv_ids, surv_times, surv_event)
+@model function identity_link(longit_ids, longit_times, longit_measurements, 
+                                  surv_ids, surv_times, surv_event)
     # treatment at study start
     tx = 0.0
     # number of longitudinal and survival measurements
@@ -198,14 +199,14 @@ With this information, a Bayesian model can be specified in Turing.jl [@Turing.j
 
     # ---------------- Likelihoods -----------------
     # add the likelihood of the longitudinal process
-    for measurement in 1:m
-        id = Int(longit_ids[measurement])
-        meas_time = longit_times[measurement]
+    for data in 1:m
+        id = Int(longit_ids[data])
+        meas_time = longit_times[data]
         sld_prediction = sld(meas_time, Ψ[id], tx)
         if isnan(sld_prediction) || sld_prediction < 0
             sld_prediction = 0
         end
-        longit_measurements[measurement] ~ Normal(sld_prediction, sld_prediction * σ)
+        longit_measurements[data] ~ Normal(sld_prediction, sld_prediction * σ)
     end
     # add the likelihood of the survival model with link
     baseline_hazard(t) = h_0(t, κ, λ)
@@ -214,7 +215,10 @@ With this information, a Bayesian model can be specified in Turing.jl [@Turing.j
         id_link(t) = sld(t, Ψ[id], tx)
         censoring = Bool(surv_event[id]) ? Inf : surv_times[id]
         # here we use the GeneralJointModel
-        surv_times[i] ~ censored(GeneralJointModel(baseline_hazard, β, id_link), upper = censoring)
+        surv_times[i] ~ censored(
+            GeneralJointModel(baseline_hazard, β, id_link),
+            upper = censoring
+        )
     end
 end
 ```
