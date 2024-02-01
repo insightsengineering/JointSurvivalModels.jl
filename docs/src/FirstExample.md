@@ -6,31 +6,31 @@ The struct `GeneralJointModel` allows you to implement joint models. Let us cons
 ```math
 m_i(t) = t^{a_i} * (1+\cos(b * t)^2),
 ```
-where ``a_i`` is a mixed effects parameter for each individual and ``b`` a population parameter. Next a weibull survival model with baseline hazard
+where ``a_i`` is a mixed effects parameter for each individual and ``b`` a population parameter. Next a Weibull survival model with baseline hazard
 
 ```math
 h_0(t) = \alpha/\theta ( t / \theta)^{\alpha -1}
 ```
 
-with the two parameters ``\alpha`` and ``\theta``. From these we can build a joint model using the identity link ``id: x \mapsto x`` and link coefficient ``c``.
+with the two parameters ``\alpha`` and ``\theta``. From these we can build a joint model using the identity link ``id: x \mapsto x`` and link coefficient ``γ``.
 
 ```math
-h_i(t) = h_0(t) \exp(c * id(m_i(t))) = \alpha/\theta ( t / \theta)^{\alpha -1} * \exp(c * t^{a_i} * (1+\cos(b * t)^2)).
+h_i(t) = h_0(t) \exp(\gamma * id(m_i(t))) = \alpha/\theta ( t / \theta)^{\alpha -1} * \exp(\gamma * t^{a_i} * (1+\cos(b * t)^2)).
 ```
 
 In code:
 ```julia
 parametric_m_i(t, i, a, b) = t^(a[i]) * (1+cos(b * t)^2)
 parametric_h_0(t, α, θ) = α/θ *(t/θ)^(1-α)
-parametric_joint_model(i, a, b, c, α, θ) = GeneralJointModel(
+parametric_joint_model(i, a, b, γ, α, θ) = GeneralJointModel(
     t -> parametric_h_0(t, α, θ),   # baseline hazard function
-    c,                              # link coefficient
+    γ,                              # link coefficient
     t -> parametric_m_i(t, i, a, b)            # link function
 )
 ```
 
 
-To simulate data for 100 individuals we assume ``a_i \sim Beta(2,10)`` and ``b = 3, c = 0.02, \alpha = 1.2, \theta = 50``:
+To simulate data for 100 individuals we assume ``a_i \sim Beta(2,10)`` and ``b = 3, γ = 0.02, \alpha = 1.2, \theta = 50``:
 ```julia
 using Distributions
 using JointModels
@@ -39,14 +39,14 @@ Random.seed!(222)
 n = 100 # number of individuals
 a = rand(Product(fill(Beta(10,2), n)))
 b = 0.2
-c = 0.05
+γ = 0.05
 α = 0.6
 θ = 70
 
 
 m(i) = t -> parametric_m_i(t, i, a, b)
 h_0(t) = parametric_h_0(t, α, θ)
-joint_models = [GeneralJointModel(h_0, c, m(i)) for i in 1:n] # joint models for all individuals
+joint_models = [GeneralJointModel(h_0, γ, m(i)) for i in 1:n] # joint models for all individuals
 ```
 
 Inspecting individual ``1`` and ``2``.
@@ -74,7 +74,7 @@ t_m = range(1,50,9)
 Y = [[rand(Normal(m(i)(t_m[j]), σ * m(i)(t_m[j]))) for j in 1:9] for i in 1:n]
 T = [rand(jm) for jm in joint_models]
 ```
-Additionaly we assume right-censoring at ``50`` and no measurements after an event:
+Additionally we assume right-censoring at ``50`` and no measurements after an event:
 ```julia
 Δ = T .< 50       # event indicators
 T = min.(T, 50)   # censoring at 50
@@ -135,15 +135,15 @@ Now a two step joint model, where we use the posterior mean of the population an
     α ~ Uniform(0.4,1.2) #0.6
     θ ~ LogNormal(4,0.2) #70
     # joint model coef
-    c ~ Normal(0,0.03)
+    γ ~ Normal(0,0.03)
     # models
     m(i) = t -> parametric_m_i(t, i, a, b)
     h_0(t) = parametric_h_0(t, α, θ)
-    joint_models = [GeneralJointModel(h_0, c, m(i)) for i in 1:n]
+    joint_models = [GeneralJointModel(h_0, γ, m(i)) for i in 1:n]
 
     # survival likelihood
     for i in 1:n
-        T[i] ~ censored(joint_models[i], upper = 50 + Δ[i]) # if cencored at time 50 then uppder = 50
+        T[i] ~ censored(joint_models[i], upper = 50 + Δ[i]) # if censored at time 50 then upper = 50
     end
 end
 # using previously sampled posterior for longitudinal process
@@ -164,11 +164,11 @@ Finally a joint model where the posterior of the longitudinal and joint survival
     α ~ Uniform(0.4,1.2) #0.6
     θ ~ LogNormal(4,0.2) #70
     # joint model coef
-    c ~ Normal(0,0.03)
+    γ ~ Normal(0,0.03)
     # models
     m(i) = t -> parametric_m_i(t, i, a, b)
     h_0(t) = parametric_h_0(t, α, θ)
-    joint_models = [GeneralJointModel(h_0, c, m(i)) for i in 1:n]
+    joint_models = [GeneralJointModel(h_0, γ, m(i)) for i in 1:n]
     # longitudinal likelihood
     for i in 1:n
         n_i = length(Y[i])
@@ -178,7 +178,7 @@ Finally a joint model where the posterior of the longitudinal and joint survival
     end
     # survival likelihood
     for i in 1:n
-        T[i] ~ censored(joint_models[i], upper = 50 + Δ[i]) # if cencored at time 50 then uppder = 50
+        T[i] ~ censored(joint_models[i], upper = 50 + Δ[i]) # if censored at time 50 then upper = 50
     end
 end
 
