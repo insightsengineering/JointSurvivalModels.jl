@@ -29,7 +29,7 @@ plot(r, ccdf(Explonential(1/2), r), label="Baseline survival")
 plot!(r, ccdf(jm, r), label="Joint Survival")
 ```
 
-For a more instructive example take a look at the documentation [first example](https://insightsengineering.github.io/jointmodels.jl/dev/FirstExample/) or the example found in `example/`.
+For a more instructive example take a look at the documentation [first example](https://insightsengineering.github.io/jointmodels.jl/dev/FirstExample/) or the case study found in `example/`.
 
 ### Contribute
 
