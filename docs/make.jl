@@ -6,6 +6,14 @@ using Distributions
 makedocs(
     sitename = "JointModels",
     format = Documenter.HTML(),
+    pages = [
+        "Home" => "index.md",
+        "First Example" => "FirstExample.md",
+        "API" => Any[
+            "JointModel" => "JointModel.md",
+            "HazardBasedDistribution" => "HazardBasedDistribution.md"
+        ],
+    ],
     modules = [JointModels]
 )
 
