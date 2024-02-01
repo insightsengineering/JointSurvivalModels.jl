@@ -53,9 +53,9 @@ In contrast, the present software supports fitting any longitudinal and survival
 # Formulation
 
 
-To build a joint model, we augment the survival analysis hazard function $h(t) = \lim_{\delta \to 0} P(t\leq T\leq t+\delta | T \geq t)/\delta$ by incorporating a link $l$ to a longitudinal process. The longitudinal process is modeled by a function $m:\mathbb{R} \to \mathbb{R}$, for example a non-linear mixed effects model [@Kerioui2020]. Let the function $h_0:\mathbb{R} \to \mathbb{R}$ describe a baseline hazard and $b\in\mathbb{R}$ be a coefficient of the link contribution. The hazard of the joint model is
+To build a joint model, we augment the survival analysis hazard function $h(t) = \lim_{\delta \to 0} P(t\leq T\leq t+\delta | T \geq t)/\delta$ by incorporating a link $l$ to a longitudinal process. The longitudinal process is modeled by a function $m:\mathbb{R} \to \mathbb{R}$, for example a non-linear mixed effects model [@Kerioui2020]. Let the function $h_0:\mathbb{R} \to \mathbb{R}$ describe a baseline hazard and $\gamma\in\mathbb{R}$ be a coefficient of the link contribution. The hazard of the joint model is
 
-$$ h(t) = h_0(t) \exp(b\cdot l(m(t))).$$
+$$ h(t) = h_0(t) \exp(\gamma\cdot l(m(t))).$$
 
 The link $l$ is not a function over the reals. In general, the link is an operator on the longitudinal models. Some examples of links such as $l(m(t)) = (l \circ m)(t)$ are given in [@Kerioui2020] such as the derivative $\frac{d}{dt} m(t)$ or integral $\int_0^t m(u) \, du$ operators.
 
@@ -77,12 +77,12 @@ $$L(M(t)) =\begin{pmatrix}
     l_1(m_{1}(t)) \\ l_2(m_{2}(t)) \\ \dots \\ l_k(m_{k}(t))
 \end{pmatrix}.$$
 
-For the link vector $L(M(t))$ we consider the coefficient vector $b \in \mathbb{R}^k$. Then we formulate the hazard as follows.
+For the link vector $L(M(t))$ we consider the coefficient vector $\gamma \in \mathbb{R}^k$. Then we formulate the hazard as follows.
 
-$$h(t) = h_0(t) \exp\left(\sum_{j\in [k]}b_{j} l_j(m_{j}(t))  \right) = h_0(t) \exp(b^\top \cdot L(M(t))).$$
+$$h(t) = h_0(t) \exp\left(\sum_{j\in [k]}\gamma_{j} l_j(m_{j}(t))  \right) = h_0(t) \exp(\gamma^\top \cdot L(M(t))).$$
 
 In addition, we consider covariates $x\in \mathbb{R}^l, l\in\mathbb{N}$ and coefficients $\beta \in \mathbb{R}^l$. This results in the hazard
-$$h(t) = h_0(t) \exp\left(b^\top \cdot L(M(t)) +  \beta^\top \cdot x \right).$$
+$$h(t) = h_0(t) \exp\left(\gamma^\top \cdot L(M(t)) +  \beta^\top \cdot x \right).$$
 
 The probability density function in survival analysis can be described by
 $$f(t) = h(t) \exp\left(-\int_0^t h(u) \, du\right).$$
@@ -145,7 +145,7 @@ $$h_i(t) = h_0(t) \exp(b * \text{SLD}(t, \Psi)).$$
 
 In code the distribution of the joint model defined by this hazard is given by:
 ```julia
-my_jm(κ, λ, b, Ψ, tx) = GeneralJointModel(t -> h_0(t, κ, λ), b, t -> sld(t, Ψ, tx))
+my_jm(κ, λ, γ, Ψ, tx) = GeneralJointModel(t -> h_0(t, κ, λ), γ, t -> sld(t, Ψ, tx))
 ```
 
 The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and mixed effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega), \Omega = (\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For biological constraints, the parameters were transformed such that $\phi_q(\Psi_{q,i}) = \phi_q\mu_q + \eta_{q,i}$ for $q\in \{\text{BSLD}, d, g, \phi\}$. For $\text{BSLD}, g, d$ a log-normal $(\phi = log)$ transform was assumed and for $\phi$ a logit-normal $(\sigma = \text{logit})$.
@@ -182,7 +182,7 @@ With this information, a Bayesian model can be specified in Turing.jl [@Turing.j
     λ ~ LogNormal(5,1)
     
     ## prior joint model
-    β ~ truncated(Normal(0,0.5),-0.1,0.1)
+    γ ~ truncated(Normal(0,0.5),-0.1,0.1)
     
     ## η describing the mixed effects of the population
     η_BSLD ~ filldist(Normal(0,Ω.BSLD),n)
@@ -216,7 +216,7 @@ With this information, a Bayesian model can be specified in Turing.jl [@Turing.j
         censoring = Bool(surv_event[id]) ? Inf : surv_times[id]
         # here we use the GeneralJointModel
         surv_times[i] ~ censored(
-            GeneralJointModel(baseline_hazard, β, id_link),
+            GeneralJointModel(baseline_hazard, γ, id_link),
             upper = censoring
         )
     end
