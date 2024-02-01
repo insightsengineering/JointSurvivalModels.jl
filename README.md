@@ -12,11 +12,10 @@ The `GeneralJointModel` implements a canonical formulation of a joint models. It
 
 
 
-### A simple example
+### Example
 
 The hazard of the exponential distribution $\text{Exp}(\alpha)$ is the constant function $x\mapsto \alpha$. For the joint longitudinal model we use a simple cosinus function. The joint hazard is then $h(t) = \alpha \exp(\gamma * \cos(t))$.
 
-Example:
 ```julia
 constant_alpha(x) = 2
 γ = 0.01
@@ -30,10 +29,12 @@ plot(r, ccdf(Explonential(1/2), r), label="Baseline survival")
 plot!(r, ccdf(jm, r), label="Joint Survival")
 ```
 
-For a more instructive example take a look at the (TODO:link to first example) or the example found in `example/` which is also described in the publication (TODO: link to publication md/pdf).
+For a more instructive example take a look at the documentation [first example](https://insightsengineering.github.io/jointmodels.jl/dev/FirstExample/) or the example found in `example/`.
 
 ### Contribute
 
+Contributions are welcome, the issue tracker is a good place to start.
+
 ### License
-This software is und
+This project is licensed under the terms of the MIT license
 
