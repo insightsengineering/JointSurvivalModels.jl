@@ -36,11 +36,11 @@ which is implemented in the general joint model:
 
 
 ```@docs
-JointModels.GeneralJointModel
+JointModels.JointModel
 ```
 
 Its hazard is calculated by:
 
 ```@docs
-JointModels.hazard(jm::GeneralJointModel, t::Real)
+JointModels.hazard(jm::JointModel, t::Real)
 ```
