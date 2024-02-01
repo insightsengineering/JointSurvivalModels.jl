@@ -1,8 +1,8 @@
 @doc raw"""
-    GeneralJointModel <: HazardBasedDistribution <: ContinuousUnivariateDistribution
+    JointModel <: HazardBasedDistribution <: ContinuousUnivariateDistribution
 
 
-`GeneralJointModel` is based on the hazard formulation:
+`JointModel` is based on the hazard formulation:
 
 ``h_i(t) = h_0(t) \exp\left(\gamma' \cdot L(M_i (t)) + \beta' \cdot x \right),``
 
@@ -18,15 +18,15 @@ the link to the longitudinal model(s)  and ``\gamma\in\mathbb{R}^k`` are the lin
 
 
 # Example
-There are constructors for calling `GeneralJointModel` without covariates and for single longitudinal models without the need for arrays. For example:
+There are constructors for calling `JointModel` without covariates and for single longitudinal models without the need for arrays. For example:
 ```
 using JointModels
 
-GeneralJointModel(identity, 0.01, identity, 0.02, 3)
+JointModel(identity, 0.01, identity, 0.02, 3)
 # corresponds to hazard: identity(t) * exp(0.01 * identity(t) +  0.02 * 3) 
-GeneralJointModel(identity, 0.01, identity)
+JointModel(identity, 0.01, identity)
 # corresponds to hazard: identity(t) * exp(0.01 * identity(t))
-GeneralJointModel(identity,
+JointModel(identity,
                     [0.01,-0.02,0.03],
                     [x -> sqrt(x), x -> sin(x)+1, x -> cos(x)^2],
                     [2, 0.3],
@@ -34,13 +34,13 @@ GeneralJointModel(identity,
 # corresponds to hazard: identity(t) * exp(0.01 * sqrt(t) - 0.02 * (sin(t)+1) + 0.03 * cos(t)^2  + 2 * 0 + 0.3 * sqrt(2))
 ```
 """
-struct GeneralJointModel<:HazardBasedDistribution
+struct JointModel<:HazardBasedDistribution
     h₀::Function
     γ::Vector
     link_m::Vector{Function}
     β::Vector
     x::Vector
-    function GeneralJointModel(h₀, γ, link_m, β, x)
+    function JointModel(h₀, γ, link_m, β, x)
         # Usability: this allows using singular variables and function instead of arrays
         if !(typeof(link_m) <: Vector) && !(typeof(γ) <: Vector)
             link_m = [link_m]
@@ -55,23 +55,23 @@ struct GeneralJointModel<:HazardBasedDistribution
 end
 
 # Constructor that allows to ommit covariates
-GeneralJointModel(h₀, γ, link_m) = GeneralJointModel(h₀, γ, link_m, [0], [0])
+JointModel(h₀, γ, link_m) = JointModel(h₀, γ, link_m, [0], [0])
 
 
 
 
 @doc raw"""
-The `hazard` for `GeneralJointModel` calculates the hazard according to the formulation
+The `hazard` for `JointModel` calculates the hazard according to the formulation
 ``h(t) = h_0(t) \exp\left(\gamma' \cdot L(M(t)) + \beta' \cdot x \right)``
-described in the documentation of `GeneralJointModel`
+described in the documentation of `JointModel`
 
 # Example
 ```
-my_joint_model = GeneralJointModel(identity, 0.01, identity)
+my_joint_model = JointModel(identity, 0.01, identity)
 hazard(my_joint_model, 10)
 ````
 """
-function hazard(jm::GeneralJointModel, t::Real)
+function hazard(jm::JointModel, t::Real)
     γ, β, x, h₀ = jm.γ, jm.β, jm.x, jm.h₀
     link_m_val = [link_m_i(t) for link_m_i in jm.link_m]
     return h₀(t) * exp(β' * x + γ' * link_m_val)
