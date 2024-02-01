@@ -10,6 +10,7 @@ using Random
 
 export 
     HazardBasedDistribution,
+    support,
     hazard,
     cumulative_hazard,
     pdf,

@@ -1,6 +1,6 @@
 # Hazard Based Distributions
 
-Abstract type describing a distribution based on the hazard funciton.
+Abstract type describing a distribution based on the hazard function.
 
 ```@docs
 JointModels.HazardBasedDistribution
@@ -8,9 +8,10 @@ JointModels.HazardBasedDistribution
 
 
 
-The `Distributions.jl` functionalities implemented for `HazardBasedDistribution`.
+The functionalities implemented for `HazardBasedDistribution`.
 
 ```@docs
+JointModels.support(dist::HazardBasedDistribution)
 JointModels.hazard(dist::HazardBasedDistribution, t::Real)
 JointModels.cumulative_hazard(dist::HazardBasedDistribution, t::Real)
 Base.rand(rng::AbstractRNG, dist::HazardBasedDistribution)
