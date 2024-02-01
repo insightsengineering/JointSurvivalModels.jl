@@ -58,20 +58,6 @@ end
 GeneralJointModel(h₀, b, link_m) = GeneralJointModel(h₀, b, link_m, [0], [0])
 
 
-# Constructor that allows to use singular variables and function instead of arrays
-"""
-function GeneralJointModel(h₀, b, link_m, β, x)
-    if !(typeof(link_m) <: Vector) && !(typeof(b) <: Vector)
-        link_m = [link_m]
-        b = [b]
-    end
-    if !(typeof(x) <: Vector) && !(typeof(β) <: Vector)
-        x = [x]
-        β = [β]
-    end
-    return GeneralJointModel(h₀, b, link_m, β, x)
-end
-"""
 
 
 @doc raw"""
