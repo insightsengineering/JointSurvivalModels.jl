@@ -8,7 +8,7 @@ using Pkg
 #Pkg.add("JointModels")
 ```
 
-The `GeneralJointModel` implements a canonical formulation of a joint models. It based on a joint hazard function $h(t) = h_0(t) \exp(b' \cdot L(M(t)))$ with a baseline hazard $h_0$ and a link to joint models $L(M(t))$. For a more detailed explanation see the [documentation](https://insightsengineering.github.io/jointmodels.jl/dev/).
+The `GeneralJointModel` implements a canonical formulation of a joint models. It based on a joint hazard function $h(t) = h_0(t) \exp(b' \cdot L(M(t)))$ with a baseline hazard $h_0$ and a link to joint models $L(M(t))$. For a more detailed explanation see the [documentation](https://insightsengineering.github.io/JointModels.jl/dev/).
 
 
 
@@ -29,7 +29,7 @@ plot(r, ccdf(Explonential(1/2), r), label="Baseline survival")
 plot!(r, ccdf(jm, r), label="Joint Survival")
 ```
 
-For a more instructive example take a look at the documentation [first example](https://insightsengineering.github.io/jointmodels.jl/dev/FirstExample/) or the case study found in `example/`.
+For a more instructive example take a look at the documentation [first example](https://insightsengineering.github.io/JointModels.jl/dev/FirstExample/) or the case study found in `example/`.
 
 ## Contribute
 
