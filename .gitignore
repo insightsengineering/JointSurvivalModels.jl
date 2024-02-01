@@ -6,3 +6,5 @@ docs/site/
 Manifest.toml
 .DS_Store
 .vscode
+
+!example/Manifest.toml
