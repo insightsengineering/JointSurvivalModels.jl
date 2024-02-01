@@ -4,14 +4,14 @@
 
 `GeneralJointModel` is based on the hazard formulation:
 
-``h_i(t) = h_0(t) \exp\left(b' \cdot L(M_i (t)) + \beta' \cdot x \right),``
+``h_i(t) = h_0(t) \exp\left(\gamma' \cdot L(M_i (t)) + \beta' \cdot x \right),``
 
 where ``h_0: \mathbb{R} \to \mathbb{R}_{+}`` is the baseline hazard function. The term ``L(M(t)): \mathbb{R} \to \mathbb{R}^k, k\in\mathbb{N}`` represents
-the link to the longitudinal model(s)  and ``b\in\mathbb{R}^k`` are the link coefficients. Lastly ``x \in\mathbb{R}^l, l\in\mathbb{N}`` the covariates with coefficients ``\beta\in\mathbb{R}^l``.
+the link to the longitudinal model(s)  and ``\gamma\in\mathbb{R}^k`` are the link coefficients. Lastly ``x \in\mathbb{R}^l, l\in\mathbb{N}`` the covariates with coefficients ``\beta\in\mathbb{R}^l``.
 
 # Fields:
 - `h₀::Function`: a positive valued function in time representing the baseline hazard
-- `b::Vector{Real}`: coefficients for links to longitudinal models, should have the same length as `link_m`
+- `γ::Vector{Real}`: coefficients for links to longitudinal models, should have the same length as `link_m`
 - `link_m::Vector{Function}`: unary functions (one argument) in time representing the link to a single or multiple longitudinal models
 - `β::Vector{Real}`: coefficients for covariates, should have the same length as `x`
 - `x::Vector{Real}`: covariates
@@ -36,33 +36,33 @@ GeneralJointModel(identity,
 """
 struct GeneralJointModel<:HazardBasedDistribution
     h₀::Function
-    b::Vector
+    γ::Vector
     link_m::Vector{Function}
     β::Vector
     x::Vector
-    function GeneralJointModel(h₀, b, link_m, β, x)
+    function GeneralJointModel(h₀, γ, link_m, β, x)
         # Usability: this allows using singular variables and function instead of arrays
-        if !(typeof(link_m) <: Vector) && !(typeof(b) <: Vector)
+        if !(typeof(link_m) <: Vector) && !(typeof(γ) <: Vector)
             link_m = [link_m]
-            b = [b]
+            γ = [γ]
         end
         if !(typeof(x) <: Vector) && !(typeof(β) <: Vector)
             x = [x]
             β = [β]
         end
-        new(h₀, b, link_m, β, x)
+        new(h₀, γ, link_m, β, x)
     end
 end
 
 # Constructor that allows to ommit covariates
-GeneralJointModel(h₀, b, link_m) = GeneralJointModel(h₀, b, link_m, [0], [0])
+GeneralJointModel(h₀, γ, link_m) = GeneralJointModel(h₀, γ, link_m, [0], [0])
 
 
 
 
 @doc raw"""
 The `hazard` for `GeneralJointModel` calculates the hazard according to the formulation
-``h(t) = h_0(t) \exp\left(b' \cdot L(M(t)) + \beta' \cdot x \right)``
+``h(t) = h_0(t) \exp\left(\gamma' \cdot L(M(t)) + \beta' \cdot x \right)``
 described in the documentation of `GeneralJointModel`
 
 # Example
@@ -72,7 +72,7 @@ hazard(my_joint_model, 10)
 ````
 """
 function hazard(jm::GeneralJointModel, t::Real)
-    b, β, x, h₀ = jm.b, jm.β, jm.x, jm.h₀
+    γ, β, x, h₀ = jm.γ, jm.β, jm.x, jm.h₀
     link_m_val = [link_m_i(t) for link_m_i in jm.link_m]
-    return h₀(t) * exp(β' * x + b' * link_m_val)
+    return h₀(t) * exp(β' * x + γ' * link_m_val)
 end
