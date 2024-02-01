@@ -112,7 +112,7 @@ $$\log( L(t_{ij},y_{ij} | \theta_L)) = \log(p_{m_i(t_{ij})}(y_{ij}))$$
 
 # Example
 
-The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models using `JointModels.jl`. It follows the simulation study by [@Kerioui2020]. They specify a longitudinal model for $\Psi = (\text{BSLD}, g, d, \phi) \in \mathbb{R}^4$ as
+The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models using `JointModels.jl`. The code can be found in the [example](https://github.com/insightsengineering/JointModels.jl/tree/main/example) folder in the project repository. It follows the simulation study by [@Kerioui2020]. They specify a longitudinal model for $\Psi = (\text{BSLD}, g, d, \phi) \in \mathbb{R}^4$ as
 
 $$\text{SLD}(t,\Psi) = \begin{cases}
     \text{BSLD}\exp(gt) & t < t_x \\
@@ -141,11 +141,11 @@ h_0(t, κ, λ) = κ/λ * (t/λ)^(κ - 1)
 
 The parameters $\Psi$ for the longitudinal model depend on the individual $i$ resulting in the joint hazard
 
-$$h_i(t) = h_0(t) \exp(b * \text{SLD}(t, \Psi)).$$
+$$h_i(t) = h_0(t) \exp(b * \text{SLD}(t, \Psi_i)).$$
 
 In code the distribution of the joint model defined by this hazard is given by:
 ```julia
-my_jm(κ, λ, γ, Ψ, tx) = JointModel(t -> h_0(t, κ, λ), γ, t -> sld(t, Ψ, tx))
+my_jm(κ, λ, γ, Ψ_i, tx) = JointModel(t -> h_0(t, κ, λ), γ, t -> sld(t, Ψ_i, tx))
 ```
 
 The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and mixed effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega), \Omega = (\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For biological constraints, the parameters were transformed such that $\phi_q(\Psi_{q,i}) = \phi_q\mu_q + \eta_{q,i}$ for $q\in \{\text{BSLD}, d, g, \phi\}$. For $\text{BSLD}, g, d$ a log-normal $(\phi = log)$ transform was assumed and for $\phi$ a logit-normal $(\sigma = \text{logit})$.
@@ -222,7 +222,25 @@ With this information, a Bayesian model can be specified in Turing.jl [@Turing.j
     end
 end
 ```
-When sampling the posterior the log probability density function of the joint model is called conditioned on specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Additionally, the implementation of generating random samples of a joint distribution enables Turing.jl [@Turing.jl] to sample a joint distribution. This allows to create posterior predictive checks or simulations, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
+When sampling the posterior the log probability density function of the joint model is called conditioned on specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Sampling with the NUTS algorithm 400 posterior samples using 200 burn-in results in posterior statistic:
+
+```
+parameters        mean        std      mcse       rhat  |  ture_parameters    
+    Symbol     Float64    Float64   Float64    Float64  |       
+
+    μ_BSLD     62.1952     4.8282    0.7664     1.0096  |        60
+       μ_d      0.0056     0.0015    0.0002     1.0473  |         0.0055 
+       μ_g      0.0017     0.0003    0.0000     0.9986  |         0.0015
+       μ_φ      0.1807     0.0615    0.0079     1.0066  |         0.2
+         σ      0.1768     0.0063    0.0006     1.0283  |         0.18
+         κ      1.0815     0.0762    0.0033     1.0028  |         1
+         λ   1393.6532   286.6294   15.9133     0.0059  |      1450
+         γ      0.0103     0.0012    0.0001     0.0005  |         0.01
+```
+Notice that the link coefficient $\gamma$ was sampled around the true value with a narrow variance. In general the survival parameters are well represented by the posterior samples. The mixed effects model parameters as well indicated by the $\hat r$ value which is close to one, with potential exception of $\mu_d$.
+
+
+Additionally, `JointModels.jl` implements the generation of random samples of a joint distribution which enables Turing.jl [@Turing.jl] to sample a joint distribution. This allows to create posterior predictive checks or simulations, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
 
 ![Individual posterior predictions \label{fig:ind_pred}](individual_prediction.svg)
 

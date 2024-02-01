@@ -2,6 +2,7 @@ using JointModels
 using Turing, Distributions, StatsPlots, CSV, DataFrames, Survival
 using ReverseDiff
 using LogExpFunctions: logit
+using Survival
 1
 # --------------------------------------------------------------
 # data processing
@@ -129,14 +130,22 @@ init_params = (
 
 
 identity_link_model = identity_link(longit_id, longit_time, longit_sld, surv_id, surv_time, surv_indicator)
-identity_link_chn = sample(identity_link_model, NUTS(100, 0.9, max_depth = 8), 200, init_params=init_params)
+identity_link_chn = sample(identity_link_model, NUTS(200, 0.9, max_depth = 8), 400, init_params=init_params)
 
 # [κ, λ, β] = [1.1500626704863541, 3.9408207824225534, 0.026148519352791527]
 
 # --------------------------------------------------------------
 # diagnostics
 # --------------------------------------------------------------
-using Survival
+
+# posterior
+para_names = [:μ_BSLD, :μ_d, :μ_g, :μ_φ, :σ, :κ, :λ, :β]
+display(identity_link_chn[para_names])
+plot(identity_link_chn[para_names])
+
+
+
+# individual predictions
 r = range(0,700,2000)
 p_survival_all = plot(title = "Overall Survival", ylabel = "Survival percentage", xlabel = "Years")
 function (km::KaplanMeier)(t::Real)
