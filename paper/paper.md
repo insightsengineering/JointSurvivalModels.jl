@@ -242,9 +242,8 @@ Notice that the link coefficient $\gamma$ was sampled around the true value with
 
 Additionally, `JointModels.jl` implements the generation of random samples of a joint distribution which enables `Turing.jl` [@Turing.jl] to sample a joint distribution. This allows to create posterior predictive checks or simulations, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
 
-![Individual posterior predictions \label{fig:ind_pred}](individual_prediction.svg)
+![Individual posterior predictions \label{fig:ind_pred}](individual_prediction.svg){ width=80% }
 
-[Individual posterior predictions \label{fig:ind_pred}](individual_prediction.svg){width=0.8}
 
 The figure \autoref{fig:ind_pred} showcases posterior predictions for the mixed effects longitudinal sub model along side the longitudinal observations for a specific individual. The figure also shows the individual survival predictions conditioned on survival until the last measurement based on the joint survival distribution. The light colored ribbons represent the 95% quantile of the posterior predictions while the line represents the median. To create the posterior predictions the above `Turing.jl` [@Turing.jl] model was used.
 
