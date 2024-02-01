@@ -1,7 +1,7 @@
 # General Joint Model
 
 
-This struct implements a general family of joint models. Let $h_0:\mathbb{R} \to\mathbb{R}}_{+}$ be a baseline hazard function. Suppose we have $k\in \mathbb{N}$ longitudinal models $\{m_{1},\dots, m_{k}\}\subset \{\text{Functions: }\mathbb{R}\to\mathbb{R}\}$ as well as $k$ links $\{l_{1},\dots, l_{k}\}\subset \{\text{Operators on functions: }\mathbb{R}\to\mathbb{R}\}$. Let $M: \mathbb{R} \to \mathbb{R}^k$ and $L:\mathbb{R}^k \to \mathbb{R}^k$ be the multidimensional vector versions
+This struct implements a general family of joint models. Let $h_0:\mathbb{R} \to\mathbb{R}_{+}$ be a baseline hazard function. Suppose we have $k\in \mathbb{N}$ longitudinal models $\{m_{1},\dots, m_{k}\}\subset \{\text{Functions: }\mathbb{R}\to\mathbb{R}\}$ as well as $k$ links $\{l_{1},\dots, l_{k}\}\subset \{\text{Operators on functions: }\mathbb{R}\to\mathbb{R}\}$. Let $M: \mathbb{R} \to \mathbb{R}^k$ and $L:\mathbb{R}^k \to \mathbb{R}^k$ be the multidimensional vector versions
 
 ```math
 \begin{align*}

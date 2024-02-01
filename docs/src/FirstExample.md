@@ -6,7 +6,7 @@ The struct `GeneralJointModel` allows you to implement joint models. Let us cons
 ```math
 m_i(t) = t^{a_i} * (1+\cos(b * t)^2),
 ```
-where ``a_i`` is a mixed effects parameter for each individual and ``b`` a population parameter. Next a weibull survival model with baseline hazard
+where ``a_i`` is a mixed effects parameter for each individual and ``b`` a population parameter. Next a Weibull survival model with baseline hazard
 
 ```math
 h_0(t) = \alpha/\theta ( t / \theta)^{\alpha -1}
@@ -74,7 +74,7 @@ t_m = range(1,50,9)
 Y = [[rand(Normal(m(i)(t_m[j]), σ * m(i)(t_m[j]))) for j in 1:9] for i in 1:n]
 T = [rand(jm) for jm in joint_models]
 ```
-Additionaly we assume right-censoring at ``50`` and no measurements after an event:
+Additionally we assume right-censoring at ``50`` and no measurements after an event:
 ```julia
 Δ = T .< 50       # event indicators
 T = min.(T, 50)   # censoring at 50
@@ -143,7 +143,7 @@ Now a two step joint model, where we use the posterior mean of the population an
 
     # survival likelihood
     for i in 1:n
-        T[i] ~ censored(joint_models[i], upper = 50 + Δ[i]) # if cencored at time 50 then uppder = 50
+        T[i] ~ censored(joint_models[i], upper = 50 + Δ[i]) # if censored at time 50 then upper = 50
     end
 end
 # using previously sampled posterior for longitudinal process
@@ -178,7 +178,7 @@ Finally a joint model where the posterior of the longitudinal and joint survival
     end
     # survival likelihood
     for i in 1:n
-        T[i] ~ censored(joint_models[i], upper = 50 + Δ[i]) # if cencored at time 50 then uppder = 50
+        T[i] ~ censored(joint_models[i], upper = 50 + Δ[i]) # if censored at time 50 then upper = 50
     end
 end
 
