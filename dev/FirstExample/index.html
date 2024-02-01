@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>First Example · JointModels</title><meta name="title" content="First Example · JointModels"/><meta property="og:title" content="First Example · JointModels"/><meta property="twitter:title" content="First Example · JointModels"/><meta name="description" content="Documentation for JointModels."/><meta property="og:description" content="Documentation for JointModels."/><meta property="twitter:description" content="Documentation for JointModels."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">JointModels</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">JointModels.jl</a></li><li class="is-active"><a class="tocitem" href>First Example</a><ul class="internal"><li><a class="tocitem" href="#Joint-Models"><span>Joint Models</span></a></li><li><a class="tocitem" href="#Modeling-in-Turing"><span>Modeling in Turing</span></a></li><li><a class="tocitem" href="#Link-functions"><span>Link functions</span></a></li></ul></li><li><a class="tocitem" href="../GeneralJointModel/">General Joint Model</a></li><li><a class="tocitem" href="../HazardBasedDistribution/">Hazard Based Distributions</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>First Example</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>First Example</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/insightsengineering/jointmodels.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/insightsengineering/jointmodels.jl/blob/main/docs/src/FirstExample.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="First-Example"><a class="docs-heading-anchor" href="#First-Example">First Example</a><a id="First-Example-1"></a><a class="docs-heading-anchor-permalink" href="#First-Example" title="Permalink"></a></h1><h2 id="Joint-Models"><a class="docs-heading-anchor" href="#Joint-Models">Joint Models</a><a id="Joint-Models-1"></a><a class="docs-heading-anchor-permalink" href="#Joint-Models" title="Permalink"></a></h2><p>The struct <code>GeneralJointModel</code> allows you to implement joint models. Let us consider a simple example. First we describe a model and generate data. Assume a non-linear mixed effects model for individual <span>$i \in \{1,2,\dots,100\}$</span></p><p class="math-container">\[m_i(t) = t^{a_i} * (1+\cos(b * t)^2),\]</p><p>where <span>$a_i$</span> is a mixed effects parameter for each individual and <span>$b$</span> a population parameter. Next a Weibull survival model with baseline hazard</p><p class="math-container">\[h_0(t) = \alpha/\theta ( t / \theta)^{\alpha -1}\]</p><p>with the two parameters <span>$\alpha$</span> and <span>$\theta$</span>. From these we can build a joint model using the identity link <span>$id: x \mapsto x$</span> and link coefficient <span>$γ$</span>.</p><p class="math-container">\[h_i(t) = h_0(t) \exp(\gamma * id(m_i(t))) = \alpha/\theta ( t / \theta)^{\alpha -1} * \exp(\gamma * t^{a_i} * (1+\cos(b * t)^2)).\]</p><p>In code:</p><pre><code class="language-julia hljs">parametric_m_i(t, i, a, b) = t^(a[i]) * (1+cos(b * t)^2)
+parametric_h_0(t, α, θ) = α/θ *(t/θ)^(1-α)
+parametric_joint_model(i, a, b, γ, α, θ) = GeneralJointModel(
+    t -&gt; parametric_h_0(t, α, θ),   # baseline hazard function
+    γ,                              # link coefficient
+    t -&gt; parametric_m_i(t, i, a, b)            # link function
+)</code></pre><p>To simulate data for 100 individuals we assume <span>$a_i \sim Beta(2,10)$</span> and <span>$b = 3, γ = 0.02, \alpha = 1.2, \theta = 50$</span>:</p><pre><code class="language-julia hljs">using Distributions
+using JointModels
+using Random
+Random.seed!(222)
+n = 100 # number of individuals
+a = rand(Product(fill(Beta(10,2), n)))
+b = 0.2
+γ = 0.05
+α = 0.6
+θ = 70
+
+
+m(i) = t -&gt; parametric_m_i(t, i, a, b)
+h_0(t) = parametric_h_0(t, α, θ)
+joint_models = [GeneralJointModel(h_0, γ, m(i)) for i in 1:n] # joint models for all individuals</code></pre><p>Inspecting individual <span>$1$</span> and <span>$2$</span>.</p><pre><code class="language-julia hljs">using Plots
+r = range(0,50,100)
+
+lm = plot(r, m(1), title=&quot;Longitudinal process&quot;, label = &quot;Individual 1&quot;, color = :blue)
+plot!(lm, r, m(2), label = &quot;Individual 2&quot;, color = :green)</code></pre><p><img src="../fig/lm_1.png" alt/></p><pre><code class="language-julia hljs">sm = plot(r, t-&gt; ccdf(joint_models[1], t), label = &quot;Survival individual 1&quot;, title=&quot;Joint survival process&quot;, color = :blue)
+plot!(sm, r, t-&gt; ccdf(joint_models[2], t), label = &quot;Survival individual 2&quot;, color = :green)
+plot!(sm, r, t-&gt; ccdf(Weibull(1.2,100),t), label = &quot;Baseline survival&quot;, color = :black)</code></pre><p><img src="../fig/sm.png" alt/></p><p>To simulate longitudinal measurements <span>$y_{ij}$</span> for individual <span>$i$</span> at time <span>$t_ij$</span> we assume a multiplicative error <span>$y_{ij} \sim N(m_i(t_{ij}), \sigma * m_i(t_{ij}) ), \sigma = 0.15$</span>. Simulate <span>$9$</span> longitudinal measurements and survival times for each individual:</p><pre><code class="language-julia hljs">σ = 0.15
+t_m = range(1,50,9)
+Y = [[rand(Normal(m(i)(t_m[j]), σ * m(i)(t_m[j]))) for j in 1:9] for i in 1:n]
+T = [rand(jm) for jm in joint_models]</code></pre><p>Additionally we assume right-censoring at <span>$50$</span> and no measurements after an event:</p><pre><code class="language-julia hljs">Δ = T .&lt; 50       # event indicators
+T = min.(T, 50)   # censoring at 50
+indices = [findlast(T[i] .&gt;= t_m) for i in 1:n]
+Y = [Y[i][1:indices[i]] for i in 1:n] # prune obs after events
+scatter!(lm, t_m[1:indices[1]], Y[1], label=&quot;obs individual 1&quot;, color = :blue)
+scatter!(lm, t_m[1:indices[2]], Y[2], label=&quot;obs individual 2&quot;, color = :green)
+vline!(lm, [T[1]], label=&quot;Event time ind 1&quot;, color = :blue)
+vline!(lm, [T[2]], label=&quot;Event time ind 2&quot;, color = :green)</code></pre><p><img src="../fig/lm_2.png" alt/></p><h2 id="Modeling-in-Turing"><a class="docs-heading-anchor" href="#Modeling-in-Turing">Modeling in Turing</a><a id="Modeling-in-Turing-1"></a><a class="docs-heading-anchor-permalink" href="#Modeling-in-Turing" title="Permalink"></a></h2><p>One application of this module is in bayesian inference frameworks, for example <code>Turing.jl</code>. For this we choose a suitable prior distribution for the parameters and use the framework to sample the posterior. This works based on the numerical estimation of the log probability density function.</p><p>First the non-linear mixed effects model by itself</p><pre><code class="language-julia hljs">using Turing
+# for better performance with multidimensional distributions (mixed effects)
+using ReverseDiff
+Turing.setadbackend(:reversediff)
+Turing.setrdcache(true)
+
+@model function example_longitudinal(Y, t_m)
+    n = length(Y)
+    
+    # longitudianl coef
+    a ~ filldist(Beta(10, 2), n)
+    b ~ Uniform(0.1, 0.3)
+    # multiplicative error
+    σ ~ Exponential(0.2)
+    # model
+    m(i) = t -&gt; parametric_m_i(t, i, a, b)
+    # longitudinal likelihood
+    for i in 1:n
+        n_i = length(Y[i])
+        for j in 1:n_i
+            Y[i][j] ~ Normal(m(i)(t_m[Int(j)]), σ * m(i)(t_m[Int(j)]))
+        end
+    end
+end
+
+longitudinal_chn = sample(example_longitudinal(Y, t_m), NUTS(), 200)
+posterior_means = summarize(longitudinal_chn)[:,2]
+a_hat = posterior_means[1:n]
+b_hat = posterior_means[101]
+</code></pre><p>Now a two step joint model, where we use the posterior mean of the population and mixed effects from the longitudinal model fitted above:</p><pre><code class="language-julia hljs">@model function example_two_step(Y, t_m, T, Δ, a, b)
+    n = length(Y)
+    
+    # survival coef
+    α ~ Uniform(0.4,1.2) #0.6
+    θ ~ LogNormal(4,0.2) #70
+    # joint model coef
+    γ ~ Normal(0,0.03)
+    # models
+    m(i) = t -&gt; parametric_m_i(t, i, a, b)
+    h_0(t) = parametric_h_0(t, α, θ)
+    joint_models = [GeneralJointModel(h_0, γ, m(i)) for i in 1:n]
+
+    # survival likelihood
+    for i in 1:n
+        T[i] ~ censored(joint_models[i], upper = 50 + Δ[i]) # if censored at time 50 then upper = 50
+    end
+end
+# using previously sampled posterior for longitudinal process
+two_step_chn = sample(example_survival(Y, t_m, T, Δ, a_hat, b_hat), NUTS(), 100)
+</code></pre><p>Finally a joint model where the posterior of the longitudinal and joint survival model are sampled simultaneously.</p><pre><code class="language-julia hljs">@model function example_joint_model(Y, t_m, T, Δ)
+    n = length(Y)
+    # longitudinal coef
+    a ~ filldist(Beta(10,2), n)
+    b ~ Uniform(0.1, 0.3)
+    # multiplicative error
+    σ ~ Exponential(0.2)
+    # survival coef
+    α ~ Uniform(0.4,1.2) #0.6
+    θ ~ LogNormal(4,0.2) #70
+    # joint model coef
+    γ ~ Normal(0,0.03)
+    # models
+    m(i) = t -&gt; parametric_m_i(t, i, a, b)
+    h_0(t) = parametric_h_0(t, α, θ)
+    joint_models = [GeneralJointModel(h_0, γ, m(i)) for i in 1:n]
+    # longitudinal likelihood
+    for i in 1:n
+        n_i = length(Y[i])
+        for j in 1:n_i
+            Y[i][j] ~ Normal(m(i)(t_m[Int(j)]), σ * m(i)(t_m[Int(j)]))
+        end
+    end
+    # survival likelihood
+    for i in 1:n
+        T[i] ~ censored(joint_models[i], upper = 50 + Δ[i]) # if censored at time 50 then upper = 50
+    end
+end
+
+joint_model_chn = sample(example_joint_model(Y, t_m, T, Δ), NUTS(), 100)</code></pre><h2 id="Link-functions"><a class="docs-heading-anchor" href="#Link-functions">Link functions</a><a id="Link-functions-1"></a><a class="docs-heading-anchor-permalink" href="#Link-functions" title="Permalink"></a></h2><p>In the example above the identity link was used for simplicity. The julia ecosystem contains suitable options to explore link functions. For example we can use ForwardDiff to take derivatives of numeric julia functions:</p><pre><code class="language-julia hljs">using ForwardDiff
+f(x) = x^2
+Dxf(x) = ForwardDiff.derivative(x -&gt;f(x), x) # first derivative
+Dx2f(x) = ForwardDiff.derivative(x -&gt;Dxf(x), x) # second derivative
+plot(f, label = &quot;f&quot;, title=&quot;Derivatives&quot;)
+plot!(Dxf, label = &quot;f&#39;&quot;)
+plot!(Dx2f, label = &quot;f&#39;&#39;&quot;)</code></pre><p><img src="../fig/deriv.png" alt/></p><p>Another interesting module could be <code>DifferentialEquations.jl,</code> which allows to calculate ODEs and PDEs numerically.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« JointModels.jl</a><a class="docs-footer-nextpage" href="../GeneralJointModel/">General Joint Model »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Thursday 1 February 2024 14:31">Thursday 1 February 2024</span>. Using Julia version 1.10.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
