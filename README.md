@@ -1,6 +1,6 @@
 # JointModels.jl
 
-This package implements joint models in Julia. It was designed to support the modeling of joint models with probabelistic programming, for example using the [Turing.jl](https://github.com/TuringLang/Turing.jl) framework. Install it with:
+This package implements joint models in Julia. It was designed to support the modeling of joint models with probabilistic programming, for example using the [Turing.jl](https://github.com/TuringLang/Turing.jl) framework. Install it with:
 
 ```julia
 using Pkg
