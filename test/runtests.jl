@@ -5,7 +5,7 @@ using HypothesisTests
 
 @testset "Numerical Hazard" begin
     # Take distribution with known hazard and compare their functionality
-    # to numerical evaluations of HazardWeibull
+    # to numerical evaluations of HazardBasedDistribution
     α, θ = 1.2, 400
     dist_weibull = Weibull(α, θ)
 
