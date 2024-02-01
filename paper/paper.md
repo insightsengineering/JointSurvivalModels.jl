@@ -150,7 +150,7 @@ my_jm(κ, λ, γ, Ψ_i, tx) = JointModel(t -> h_0(t, κ, λ), γ, t -> sld(t, Ψ
 
 The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and mixed effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega), \Omega = (\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For biological constraints, the parameters were transformed such that $\phi_q(\Psi_{q,i}) = \phi_q\mu_q + \eta_{q,i}$ for $q\in \{\text{BSLD}, d, g, \phi\}$. For $\text{BSLD}, g, d$ a log-normal $(\phi = log)$ transform was assumed and for $\phi$ a logit-normal $(\sigma = \text{logit})$.
 
-With this information, a Bayesian model can be specified in Turing.jl [@Turing.jl] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the software is used. This results in a canonical translation of the statistical ideas into code. For longitudinal data, a multiplicative error model is used using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from [@Kerioui2020] can be implemented as follows in code:
+With this information, a Bayesian model can be specified in `Turing.jl` [@Turing.jl] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the software is used. This results in a canonical translation of the statistical ideas into code. For longitudinal data, a multiplicative error model is used using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from [@Kerioui2020] can be implemented as follows in code:
 
 ```julia
 @model function identity_link(longit_ids, longit_times, longit_measurements, 
@@ -240,13 +240,13 @@ parameters        mean        std      mcse       rhat  |  ture_parameters
 Notice that the link coefficient $\gamma$ was sampled around the true value with a narrow variance. In general the survival parameters are well represented by the posterior samples. The mixed effects model parameters as well indicated by the $\hat r$ value which is close to one, with potential exception of $\mu_d$.
 
 
-Additionally, `JointModels.jl` implements the generation of random samples of a joint distribution which enables Turing.jl [@Turing.jl] to sample a joint distribution. This allows to create posterior predictive checks or simulations, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
+Additionally, `JointModels.jl` implements the generation of random samples of a joint distribution which enables `Turing.jl` [@Turing.jl] to sample a joint distribution. This allows to create posterior predictive checks or simulations, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
 
 ![Individual posterior predictions \label{fig:ind_pred}](individual_prediction.svg)
 
 [Individual posterior predictions \label{fig:ind_pred}](individual_prediction.svg){width=0.8}
 
-The figure \autoref{fig:ind_pred} showcases posterior predictions for the mixed effects longitudinal sub model along side the longitudinal observations for a specific individual. The figure also shows the individual survival predictions conditioned on survival until the last measurement based on the joint survival distribution. The light colored ribbons represent the 95% quantile of the posterior predictions while the line represents the median. To create the posterior predictions the above Turing.jl [@Turing.jl] model was used.
+The figure \autoref{fig:ind_pred} showcases posterior predictions for the mixed effects longitudinal sub model along side the longitudinal observations for a specific individual. The figure also shows the individual survival predictions conditioned on survival until the last measurement based on the joint survival distribution. The light colored ribbons represent the 95% quantile of the posterior predictions while the line represents the median. To create the posterior predictions the above `Turing.jl` [@Turing.jl] model was used.
 
 
 
