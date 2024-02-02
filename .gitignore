@@ -8,3 +8,4 @@ Manifest.toml
 .vscode
 
 !example/Manifest.toml
+!docs/quarto_old/pages/Manifest.toml
