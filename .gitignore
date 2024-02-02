@@ -6,3 +6,5 @@ docs/site/
 Manifest.toml
 .DS_Store
 .vscode
+
+!docs/quarto_old/pages/Manifest.toml
