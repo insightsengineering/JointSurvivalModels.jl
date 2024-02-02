@@ -9,10 +9,13 @@ tags:
 authors:
   - name: Yannik Ammann
     affiliation: "1, 2"
-  - name: Daniel, Francois & Doug
+  - name: Lorem
     orcid: 0000-0000-0000-0000
     equal-contrib: true
     affiliation: 2
+  - name: Yannik Ammann
+    affiliation: "1, 2"
+  
 affiliations:
  - name: ETH Zürich, Switzerland
    index: 1
