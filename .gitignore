@@ -7,5 +7,4 @@ Manifest.toml
 .DS_Store
 .vscode
 
-!example/Manifest.toml
 !docs/quarto_old/pages/Manifest.toml
