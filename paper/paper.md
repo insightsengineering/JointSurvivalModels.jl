@@ -68,11 +68,11 @@ $$L(M(t)) =\begin{pmatrix}
     l_1(m_{1}(t)) \\ l_2(m_{2}(t)) \\ \dots \\ l_k(m_{k}(t))
 \end{pmatrix}.$$
 
-For the link vector $L(M(t))$ we consider the coefficient vector $\gamma \in \mathbb{R}^k$. Let $[k] := \{1,\dots, k\}$ then we formulate the hazard as follows.
+For the link vector $L(M(t))$ we consider the coefficient vector $\gamma \in \mathbb{R}^k$ and formulate the hazard as follows
 
-$$h(t) = h_0(t) \exp\left(\sum_{j\in [k]}\gamma_{j} l_j(m_{j}(t))  \right) = h_0(t) \exp(\gamma^\top \cdot L(M(t))).$$
+$$h(t) = h_0(t) \exp\left(\sum_{j = 1}^{k}\gamma_{j} l_j(m_{j}(t))  \right) = h_0(t) \exp(\gamma^\top \cdot L(M(t))).$$
 
-In addition, we consider covariates $x\in \mathbb{R}^p, p\in\mathbb{N}$ and coefficients $\beta \in \mathbb{R}^l$. This results in the hazard
+In addition, we consider covariates $x\in \mathbb{R}^p, p\in\mathbb{N}$ and coefficients $\beta \in \mathbb{R}^p$. This results in the hazard
 $$h(t) = h_0(t) \exp\left(\gamma^\top \cdot L(M(t)) +  \beta^\top \cdot x \right).$$
 
 The probability density function in survival analysis can be described by
@@ -82,16 +82,16 @@ Note for nonlinear longitudinal models $\int_0^t h(u) \, du$ generally does not 
 
 ## Likelihood calculations
 
-Suppose that we have $n\in \mathbb{N}$ individuals. For each individual $i\in [n]=\{1,\dots, n\}$ we observe $n_i \in \mathbb{N}$ different longitudinal measurements $\{y_{i1}, \dots, y_{in_i}\}\subseteq \mathbb{R}$ at associated time points $\{t_{i1}, \dots, t_{in_i}\}\subseteq \mathbb{R}$ at which the measurements were recorded. In addition, we measure an event time $\tau_i \in \mathbb{R}$ and an event indicator $\delta_i \in \{0,1\}$. Without loss of generality we will consider right-censored data; this can be adapted to other censoring processes. Let $Y_i := (\tau_i,\delta_i,(y_{i1}, \dots, y_{in_i}),(t_{i1}, \dots, t_{in_i}))$ be the measurements associated with individual $i\in [n]$ and $Y = \{Y_1, \dots, Y_n\}$ all observations.
+Suppose that we have $n\in \mathbb{N}$ individuals. For each individual $i\in \{1,\dots, n\}$ we observe $n_i \in \mathbb{N}$ different longitudinal measurements $\{y_{i1}, \dots, y_{in_i}\}\subseteq \mathbb{R}$ at associated time points $\{t_{i1}, \dots, t_{in_i}\}\subseteq \mathbb{R}$ at which the measurements were recorded. In addition, we measure an event time $\tau_i \in \mathbb{R}$ and an event indicator $\delta_i \in \{0,1\}$. Without loss of generality we will consider right-censored data; this can be adapted to other censoring processes. Let $Y_i := (\tau_i,\delta_i,(y_{i1}, \dots, y_{in_i}),(t_{i1}, \dots, t_{in_i}))$ be the measurements associated with individual $i$ and $Y = \{Y_1, \dots, Y_n\}$ all observations.
 
 
 
 
 Let $\theta_H$ describe the parameters for the baseline hazard, $\theta_J$ for the joint model, and $\theta_L$ for longitudinal models. The likelihood of the joint model is comprised of the likelihood of the survival measurements and the longitudinal measurements.
 
-$$\log L(Y | (\theta_H, \theta_J, \theta_L)) = \sum_{i\in[n]} \log ( L((\tau_i, \delta_i) |  (\theta_H, \theta_J, \theta_L))) +  \sum_{i\in[n]}\sum_{ j\in[n_i]} \log( L(t_{ij},y_{ij} | \theta_L) )$$
+$$\log L(Y | (\theta_H, \theta_J, \theta_L)) = \sum_{i=1}^{n} \log ( L((\tau_i, \delta_i) |  (\theta_H, \theta_J, \theta_L))) +  \sum_{i = 1}^{n}\sum_{ j=1}^{n_i} \log( L(t_{ij},y_{ij} | \theta_L) )$$
 
-For individual $i\in[n]$ let $f_i$ be the joint probability density function and $S_i$ the survival function. The likelihood depends on the censoring process, for example for right-censored measurements $(\tau_i, \delta_i)$ is given by
+For individual $i$ let $f_i$ be the joint probability density function and $S_i$ the survival function. The likelihood depends on the censoring process, for example for right-censored measurements $(\tau_i, \delta_i)$ is given by
 
 $$\log ( L((\tau_i, \delta_i) |  (\theta_H, \theta_J, \theta_L))) = \delta_i \log(f_i(\tau_i)) - (1-\delta_i)\int_0^{\tau_i} h_i(u) \,du$$
 
@@ -133,7 +133,7 @@ For the survival distribution they use an Exponential distribution which has a c
 h_0(t, λ) = 1/λ
 ```
 
-In the mixed effects model every individual $i$ has a different parameter denoted by $\Psi_i$ resulting in the joint hazard
+In the mixed effects model every individual $i$ has a different parameter denoted by $\Psi_i$ resulting in the joint hazard for individual $i$
 
 $$h_i(t) = h_0(t) \exp(\gamma \cdot L(M(t))) = h_0(t) \exp(\gamma * \text{id}(\text{SLD}(t, \Psi_i))).$$
 
