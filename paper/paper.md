@@ -1,5 +1,5 @@
 ---
-title: 'JointModels.jl: A Julia package for generalized Bayesian joint models of time-to-event and longitudinal outcomes'
+title: 'JointModels.jl: A Julia package for general Bayesian joint models'
 tags:
   - Survival analysis
   - Nonlinear
