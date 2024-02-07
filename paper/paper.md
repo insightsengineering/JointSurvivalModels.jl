@@ -29,14 +29,14 @@ bibliography: paper.bib
 ---
 
 # Summary
-`JointModels.jl` implements a numerical approach to define a distribution based on the survival hazard function. In particular this provided a mechanism of defining joint models of time-to-even data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation is able to generate samples of joint models. This allows its use in simulations and predictions, which are common in Bayesian workflows [@BayesianWorkflow].
+`JointModels.jl` implements a numerical approach to define a distribution based on the survival hazard function. In particular, this provides a mechanism for defining joint models of time-to-even data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation can generate samples of joint models. This allows its use in simulations and predictions, which are common in Bayesian workflows [@BayesianWorkflow].
 
 
 # Statement of need
 
 Over the last decade, there has been a growing interest in joint models for longitudinal and time-to-event outcome data. This is the case in clinical research where biomarkers are often measured repeatedly over time, with the expectation that they may provide insights into the likelihood of a long-term clinical outcome such as disease progression or adverse events. As a consequence, joint models have been proposed to leverage this data and used for the prediction of individual risks, the evaluation of a biomarker for a clinical outcome, and for making inferences about treatment.
 
-In oncology, it is well known that the individual risk of death depends on the treatment-induced changes in tumor size over time [@Tardivon2019]. Because pharmacologic effects are typically transient, nonlinear mixed-effect models are required to capture central tendency and inter-individual variability in tumor size, while parametric models can be used for analysing time to death. Joint models have been used in other therapeutic areas such as neurology [@Khnel2021], cardiovascular disease [@KassahunYimer2020], or infection diseases [@Wu2007].
+In oncology, it is well known that the individual risk of death depends on the treatment-induced changes in tumor size over time [@Tardivon2019]. Because pharmacologic effects are typically transient, nonlinear mixed-effect models are required to capture central tendency and inter-individual variability in tumor size, while parametric models can be used for analyzing time to death. Joint models have been used in other therapeutic areas such as neurology [@Khnel2021], cardiovascular disease [@KassahunYimer2020], or infection diseases [@Wu2007].
 
 The current landscape of open-source software allowing end-users to easily fit and use joint models consists primarily of R packages such as JMbayes [@JMbayes], rstanarm [@rstanarm], joineR [@joineR], or JM [@JM]. These packages typically limit the longitudinal model to linear forms (for the parameters) preventing users from fitting joint models with saturating biological processes resulting in nonlinear profiles for the biomarker.
 In contrast, the present software supports fitting any longitudinal and survival model, provided the joint model fulfills continuity and certain smoothness characteristics for numerical procedures. Such flexibility is crucial for studying complex biological processes.
@@ -82,7 +82,7 @@ Note for nonlinear longitudinal models $\int_0^t h(u) \, du$ generally does not 
 
 ## Likelihood calculations
 
-Suppose that we have $n\in \mathbb{N}$ individuals. For each individual $i\in \{1,\dots, n\}$ we observe $n_i \in \mathbb{N}$ different longitudinal measurements $\{y_{i1}, \dots, y_{in_i}\}\subseteq \mathbb{R}$ at associated time points $\{t_{i1}, \dots, t_{in_i}\}\subseteq \mathbb{R}$ at which the measurements were recorded. In addition, we measure an event time $\tau_i \in \mathbb{R}$ and an event indicator $\delta_i \in \{0,1\}$. Without loss of generality we will consider right-censored data; this can be adapted to other censoring processes. Let $Y_i := (\tau_i,\delta_i,(y_{i1}, \dots, y_{in_i}),(t_{i1}, \dots, t_{in_i}))$ be the measurements associated with individual $i$ and $Y = \{Y_1, \dots, Y_n\}$ all observations.
+Suppose that we have $n\in \mathbb{N}$ individuals. For each individual $i\in \{1,\dots, n\}$ we observe $n_i \in \mathbb{N}$ different longitudinal measurements $\{y_{i1}, \dots, y_{in_i}\}\subseteq \mathbb{R}$ at associated time points $\{t_{i1}, \dots, t_{in_i}\}\subseteq \mathbb{R}$ at which the measurements were recorded. In addition, we measure an event time $\tau_i \in \mathbb{R}$ and an event indicator $\delta_i \in \{0,1\}$. Without loss of generality, we will consider right-censored data; this can be adapted to other censoring processes. Let $Y_i := (\tau_i,\delta_i,(y_{i1}, \dots, y_{in_i}),(t_{i1}, \dots, t_{in_i}))$ be the measurements associated with individual $i$ and $Y = \{Y_1, \dots, Y_n\}$ all observations.
 
 
 
@@ -127,7 +127,7 @@ function sld(t, Ψ, tx = 0.0)
 end
 ```
 
-For the survival distribution they use an Exponential distribution which has a constant hazard $h_0(t) = 1 / \lambda$ with scale parameter $\lambda \in \mathbb{R}_{\geq 0}$
+For the survival distribution, they use an Exponential distribution which has a constant hazard $h_0(t) = 1 / \lambda$ with scale parameter $\lambda \in \mathbb{R}_{\geq 0}$
 
 ```julia
 h_0(t, λ) = 1/λ
@@ -137,7 +137,7 @@ In the mixed effects model every individual $i$ has a different mixed effects pa
 
 $$h_i(t) = h_0(t) \exp(\gamma \cdot L(M_i(t))) = h_0(t) \exp(\gamma * \text{id}(\text{SLD}(t, \Psi_i))).$$
 
-The identity $id$ was used as a link. In code the distribution of the joint model defined by this hazard is given by:
+The identity $id$ was used as a link. In code, the distribution of the joint model defined by this hazard is given by:
 ```julia
 my_jm(λ, γ, Ψ_i, tx) = JointModel(t -> h_0(t, λ), γ, t -> sld(t, Ψ_i, tx))
 ```
@@ -236,12 +236,12 @@ parameters        mean        std      mcse       rhat  |  ture_parameters
          λ   1491.2720   307.5059    6.4314     0.0008  |      1450
          γ      0.0103     0.0012    0.0000     1.0005  |         0.01
 ```
-Notice that the link coefficient $\gamma$ was sampled around the true value $0.01$ with a narrow variance. In general the survival and population parameters are well represented by the posterior samples indicated by the $\hat r$ value which is close to one.
+Notice that the link coefficient $\gamma$ was sampled around the true value $0.01$ with a narrow variance. The survival and population parameters are well represented by the posterior samples indicated by the $\hat r$ value, which is close to one and the relative closeness to the true parameter.
 
 
-Additionally, `JointModels.jl` implements the generation of random samples of a joint distribution which enables `Turing.jl` to sample a joint distribution. This allows to create posterior predictive checks, simulations or individual predictions \autoref{fig:ind_pred}, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
+Additionally, `JointModels.jl` implements the generation of random samples of a joint distribution which enables `Turing.jl` to sample a joint distribution. This allows the creation of posterior predictive checks, simulations, or individual predictions \autoref{fig:ind_pred}, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
 
-![The figure showcases individual posterior prediction for the mixed effects longitudinal sub model along side the longitudinal observations. The figure also shows the individual survival predictions conditioned on survival until the last measurement based on the joint survival distribution. The light colored ribbons represent the 95% quantile of the posterior predictions while the line represents the median. To create the posterior predictions the above `Turing.jl` model was used. \label{fig:ind_pred}](individual_prediction.svg){ width=80% }
+![The figure showcases individual posterior prediction for the mixed effects longitudinal sub-model along side the longitudinal observations. The figure also shows the individual survival predictions conditioned on survival until the last measurement based on the joint survival distribution. The light-colored ribbons represent the 95% quantile of the posterior predictions while the line represents the median. To create the posterior predictions the above `Turing.jl` model was used. \label{fig:ind_pred}](individual_prediction.svg){ width=80% }
 
 
 
