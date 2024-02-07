@@ -127,10 +127,10 @@ function sld(t, Ψ, tx = 0.0)
 end
 ```
 
-For the survival distribution they use a baseline Weibull hazard $h_0(t) =\kappa / \lambda * (t/\lambda)^{\kappa-1}$ with parameters $\kappa, \lambda \in \mathbb{R}_{\geq 0}$
+For the survival distribution they use an Exponential distribution which has a constant hazard $h_0(t) = 1 / \lambda$ with scale parameter $\lambda \in \mathbb{R}_{\geq 0}$
 
 ```julia
-h_0(t, κ, λ) = κ/λ * (t/λ)^(κ - 1)
+h_0(t, λ) = 1/λ
 ```
 
 In the mixed effects model every individual $i$ has a different parameter denoted by $\Psi_i$ resulting in the joint hazard
@@ -139,7 +139,7 @@ $$h_i(t) = h_0(t) \exp(\gamma \cdot L(M(t))) = h_0(t) \exp(\gamma * \text{id}(\t
 
 The identity $id$ was used as a link. In code the distribution of the joint model defined by this hazard is given by:
 ```julia
-my_jm(κ, λ, γ, Ψ_i, tx) = JointModel(t -> h_0(t, κ, λ), γ, t -> sld(t, Ψ_i, tx))
+my_jm(λ, γ, Ψ_i, tx) = JointModel(t -> h_0(t, λ), γ, t -> sld(t, Ψ_i, tx))
 ```
 
 The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and random effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega), \Omega = \text{diag}(\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For $\text{BSLD}, g, d$ a log-normal transform $\log(\Psi_{g,i}) = log (\mu_g) + \eta_{g,i}$ was used while for $\phi$ a logit transform $\text{logit}(\Psi_{\phi,1}) = \text{logit}(\mu_\phi) + \eta_{\phi,1} $ was used.
@@ -177,8 +177,7 @@ With this information, a Bayesian model can be specified in `Turing.jl` [@Turing
     Ω = (BSLD = ω_BSLD^2, d = ω_d^2, g = ω_g^2, φ = ω_φ^2)
     # multiplicative error
     σ ~ LogNormal(0, 1)
-    ## priors survival
-    κ ~ LogNormal(0, 1)
+    ## prior survival
     λ ~ LogNormal(5, 1)
 
     ## prior joint model
@@ -209,7 +208,7 @@ With this information, a Bayesian model can be specified in `Turing.jl` [@Turing
         longit_measurements[data] ~ Normal(sld_prediction, sld_prediction * σ)
     end
     # add the likelihood of the survival model with link
-    baseline_hazard(t) = h_0(t, κ, λ)
+    baseline_hazard(t) = h_0(t, λ)
     for i = 1:n
         id = Int(surv_ids[i])
         id_link(t) = sld(t, Ψ[id], tx)
@@ -234,7 +233,6 @@ parameters        mean        std      mcse       rhat  |  ture_parameters
        μ_g      0.0017     0.0003    0.0000     0.9986  |         0.0015
        μ_φ      0.1807     0.0615    0.0079     1.0066  |         0.2
          σ      0.1768     0.0063    0.0006     1.0283  |         0.18
-         κ      1.0815     0.0762    0.0033     1.0028  |         1
          λ   1393.6532   286.6294   15.9133     0.0059  |      1450
          γ      0.0103     0.0012    0.0001     0.0005  |         0.01
 ```
