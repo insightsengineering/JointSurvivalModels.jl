@@ -222,7 +222,7 @@ With this information, a Bayesian model can be specified in `Turing.jl` [@Turing
     end
 end
 ```
-When sampling the posterior the log probability density function of the joint model is called conditioned on specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Sampling with the `Turing.Inference.NUTS` algorithm 2000 posterior samples using 1000 burn-in results in posterior statistic:
+When sampling the posterior the log probability density function `logpdf` implemented in `JointModels.jl` is called for a distribution given specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Sampling with the `Turing.Inference.NUTS` algorithm 2000 posterior samples using 1000 burn-in results in posterior statistic:
 
 ```
 parameters        mean        std      mcse       rhat  |  ture_parameters    
