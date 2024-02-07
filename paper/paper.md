@@ -230,7 +230,7 @@ parameters        mean        std      mcse       rhat  |  ture_parameters
        μ_g      0.0018     0.0002    0.0000     0.9998  |         0.0015
        μ_φ      0.1729     0.0591    0.0049     1.0001  |         0.2
          σ      0.1767     0.0057    0.0001     1.0008  |         0.18
-         λ   1491.2720   307.5059    6.4314     0.0008  |      1450
+         λ   1491.2720   307.5059    6.4314     1.0008  |      1450
          γ      0.0103     0.0012    0.0000     1.0005  |         0.01
 ```
 Notice that the link coefficient $\gamma$ was sampled around the true value $0.01$ with a narrow variance. The survival and population parameters are well represented by the posterior samples indicated by the $\hat r$ value, which is close to one and the relative closeness to the true parameter.
