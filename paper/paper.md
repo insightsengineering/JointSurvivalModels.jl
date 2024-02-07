@@ -29,7 +29,7 @@ bibliography: paper.bib
 ---
 
 # Summary
-This Julia package implements a numerical approach to define a distribution based on the survival hazard function. In particular this provided a mechanism of defining joint models of time-to-even data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation is able to generate samples of joint models. This allows its use in simulations, which are common in Bayesian workflows [@BayesianWorkflow].
+`JointModels.jl` implements a numerical approach to define a distribution based on the survival hazard function. In particular this provided a mechanism for defining joint models of time-to-even data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation is able to generate samples of joint models. This allows its use in simulations and predictions, which are common in Bayesian workflows [@BayesianWorkflow].
 
 
 # Statement of need
