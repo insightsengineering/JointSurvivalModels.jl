@@ -31,12 +31,12 @@ aas-journal: Astrophysical Journal <- The name of the AAS journal.
 ---
 
 # Summary
-This software implements a numerical approach to define a distribution based on the description of the hazard function from survival analysis. In particular this allows to define joint models of time-to-even data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation is able to generate samples of joint models. This allows its use in simulations, which are common in Bayesian workflows [@BayesianWorkflow].
+This Julia package implements a numerical approach to define a distribution based on the survival hazard function. In particular this provided a mechanism of defining joint models of time-to-even data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation is able to generate samples of joint models. This allows its use in simulations, which are common in Bayesian workflows [@BayesianWorkflow].
 
 
 # Statement of need
 
-Over the last decade, there has been a growing interest in joint models for longitudinal and time-to-event outcome data. This is the case in clinical research where biomarkers are often measured repeatedly over time, with the expectation that they may provide insights into the likelihood of a long-term clinical outcome (such as death). As a consequence, joint models have been proposed to leverage this data and used for the prediction of individual risks, the evaluation of surrogacy of a biomarker for a clinical outcome, and for making inferences about treatment in various therapeutic areas.
+Over the last decade, there has been a growing interest in joint models for longitudinal and time-to-event outcome data. This is the case in clinical research where biomarkers are often measured repeatedly over time, with the expectation that they may provide insights into the likelihood of a long-term clinical outcome such as disease progression or adverse events. As a consequence, joint models have been proposed to leverage this data and used for the prediction of individual risks, the evaluation of surrogacy of a biomarker for a clinical outcome, and for making inferences about treatment in various therapeutic areas.
 
 In oncology, it is well known that the individual risk of death depends on the treatment-induced changes in tumor size over time [@Tardivon2019]. Because pharmacologic effects are typically transient, nonlinear mixed-effect models are required to capture central tendency and inter-individual variability in tumor size, while parametric models can be used for analysing time to death. Joint models have been used in other therapeutic areas such as neurology [@Khnel2021], cardiovascular disease [@KassahunYimer2020], or infection diseases [@Wu2007].
 
@@ -50,7 +50,7 @@ To build a joint model, we augment the survival analysis hazard function $h(t) =
 
 $$ h(t) = h_0(t) \exp(\gamma\cdot l(m(t))).$$
 
-The link $l$ is not a function over the reals. In general, the link is an operator on the longitudinal models. Some examples of links $l(m(t)) = (l \circ m)(t)$ are given in @Rizopoulos2012 such as the derivative $d/dt \; m(t)$ or integral $\int_0^t m(u) \, du$ operators.
+Where $l$ is the link to the longitudinal model. In general, the link is an operator on the longitudinal models. Some examples of links $l(m(t)) = (l \circ m)(t)$ are given in @Rizopoulos2012 such as the derivative $d/dt \; m(t)$ or integral $\int_0^t m(u) \, du$ operators.
 
 
 Now we extend this idea to multiple longitudinal models. Suppose that we have $k\in \mathbb{N}$ longitudinal models $\{m_{1},\dots, m_{k}\}$ as well as $k$ link functions $\{l_{1},\dots, l_{k}\}$. Let $M: \mathbb{R} \to \mathbb{R}^k$ and $L:\mathbb{R}^k \to \mathbb{R}^k$ be the vector of functions
@@ -108,7 +108,7 @@ $$\log( L(t_{ij},y_{ij} | \theta_L)) = \log(p_{m_i(t_{ij})}(y_{ij}))$$
 
 # Example
 
-The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models using `JointModels.jl`. The code can be found in the [example](https://github.com/insightsengineering/JointModels.jl/tree/main/example) folder in the project repository. Following @Kerioui2020 a longitudinal model is specified with parameters  $\Psi = (\text{BSLD}, g, d, \phi)$ where $ \text{BSLD}, g, d \in \mathbb{R}_{\geq 0},\; \phi \in [0,1]$ and start of treatment $t_x$
+The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models using `JointModels.jl`. The code can be found in the [example](https://github.com/insightsengineering/JointModels.jl/tree/main/example) folder in the project repository. Following @Kerioui2020 a longitudinal model for the sum of longest diameters $\text{SLD}: \mathbb{R} \to \mathbb{R}_{\geq 0}$ is specified with parameters  $\Psi = (\text{BSLD}, g, d, \phi)$ where $ \text{BSLD}, g, d \in \mathbb{R}_{\geq 0},\; \phi \in [0,1]$ and start of treatment $t_x$
 
 $$\text{SLD}(t,\Psi) = \begin{cases}
     \text{BSLD}\exp(gt) & t < t_x \\
@@ -129,7 +129,7 @@ function sld(t, Ψ, tx = 0.0)
 end
 ```
 
-They use a baseline Weibull hazard $h_0(t) =\kappa / \lambda * (t/\lambda)^{\kappa-1}$ with parameters $\kappa, \lambda \in \mathbb{R}_{\geq 0}$
+For the survival distribution they use a baseline Weibull hazard $h_0(t) =\kappa / \lambda * (t/\lambda)^{\kappa-1}$ with parameters $\kappa, \lambda \in \mathbb{R}_{\geq 0}$
 
 ```julia
 h_0(t, κ, λ) = κ/λ * (t/λ)^(κ - 1)
@@ -139,7 +139,7 @@ In the mixed effects model every individual $i$ has a different parameter denote
 
 $$h_i(t) = h_0(t) \exp(\gamma \cdot L(M(t))) = h_0(t) \exp(\gamma * \text{id}(\text{SLD}(t, \Psi_i))).$$
 
-The identity was used as a link. In code the distribution of the joint model defined by this hazard is given by:
+The identity $id$ was used as a link. In code the distribution of the joint model defined by this hazard is given by:
 ```julia
 my_jm(κ, λ, γ, Ψ_i, tx) = JointModel(t -> h_0(t, κ, λ), γ, t -> sld(t, Ψ_i, tx))
 ```
@@ -149,9 +149,15 @@ The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}}
 With this information, a Bayesian model can be specified in `Turing.jl` [@Turing] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the software is used. This results in a canonical translation of the statistical ideas into code. For longitudinal data, a multiplicative error model is used using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from @Kerioui2020 can be implemented as follows in code:
 
 ```julia
-@model function identity_link(longit_ids, longit_times, longit_measurements, 
-                                  surv_ids, surv_times, surv_event)
-    # treatment at study start
+@model function identity_link(
+    longit_ids,
+    longit_times,
+    longit_measurements,
+    surv_ids,
+    surv_times,
+    surv_event,
+)
+    # treatment at study star
     tx = 0.0
     # number of longitudinal and survival measurements
     n = length(surv_ids)
@@ -160,38 +166,38 @@ With this information, a Bayesian model can be specified in `Turing.jl` [@Turing
     # ---------------- Priors -----------------
     ## priors longitudinal
     # μ priors, population parameters
-    μ_BSLD ~ LogNormal(3.5,1)
-    μ_d ~ Beta(1,100)
-    μ_g ~ Beta(1,100)
-    μ_φ ~ Beta(2,4)
+    μ_BSLD ~ LogNormal(3.5, 1)
+    μ_d ~ Beta(1, 100)
+    μ_g ~ Beta(1, 100)
+    μ_φ ~ Beta(2, 4)
     μ = (BSLD = μ_BSLD, d = μ_d, g = μ_g, φ = μ_φ)
     # ω priors, mixed/individual effects
-    ω_BSLD ~ LogNormal(0,1)
-    ω_d ~ LogNormal(0,1)
-    ω_g ~ LogNormal(0,1)
-    ω_φ ~ LogNormal(0,1)
+    ω_BSLD ~ LogNormal(0, 1)
+    ω_d ~ LogNormal(0, 1)
+    ω_g ~ LogNormal(0, 1)
+    ω_φ ~ LogNormal(0, 1)
     Ω = (BSLD = ω_BSLD^2, d = ω_d^2, g = ω_g^2, φ = ω_φ^2)
     # multiplicative error
-    σ ~ LogNormal(0,1)
+    σ ~ LogNormal(0, 1)
     ## priors survival
-    κ ~ truncated(LogNormal(0,1),0.8,1.2)
-    λ ~ LogNormal(5,1)
-    
+    κ ~ LogNormal(0, 1)
+    λ ~ LogNormal(5, 1)
+
     ## prior joint model
-    γ ~ truncated(Normal(0,0.5),-0.1,0.1)
-    
+    γ ~ truncated(Normal(0, 0.5), -0.1, 0.1)
+
     ## η describing the mixed effects of the population
-    η_BSLD ~ filldist(Normal(0,Ω.BSLD),n)
-    η_d ~ filldist(Normal(0,Ω.d),n)
-    η_g ~ filldist(Normal(0,Ω.g),n)
-    η_φ ~ filldist(Normal(0,Ω.φ),n)
-    η = [(BSLD=η_BSLD[i], d=η_d[i], g=η_g[i], φ=η_φ[i]) for i in 1:n]
+    η_BSLD ~ filldist(Normal(0, Ω.BSLD), n)
+    η_d ~ filldist(Normal(0, Ω.d), n)
+    η_g ~ filldist(Normal(0, Ω.g), n)
+    η_φ ~ filldist(Normal(0, Ω.φ), n)
+    η = [(BSLD = η_BSLD[i], d = η_d[i], g = η_g[i], φ = η_φ[i]) for i = 1:n]
     # Transforms
-    Ψ = [[μ_BSLD * exp(η_BSLD[i]),
-    μ_g * exp(η_g[i]),
-    μ_d * exp(η_d[i]),
-    inverse(logit)(logit(μ_φ) + (η_φ[i]))]
-    for i in 1:n]
+    Ψ = [  [μ_BSLD * exp(η_BSLD[i]),
+            μ_g * exp(η_g[i]),
+            μ_d * exp(η_d[i]),
+            inverse(logit)(logit(μ_φ) + (η_φ[i])),] 
+         for i = 1:n]
 
     # ---------------- Likelihoods -----------------
     # add the likelihood of the longitudinal process
@@ -206,19 +212,20 @@ With this information, a Bayesian model can be specified in `Turing.jl` [@Turing
     end
     # add the likelihood of the survival model with link
     baseline_hazard(t) = h_0(t, κ, λ)
-    for i in 1:n
+    for i = 1:n
         id = Int(surv_ids[i])
         id_link(t) = sld(t, Ψ[id], tx)
         censoring = Bool(surv_event[id]) ? Inf : surv_times[id]
         # here we use the JointModel
-        surv_times[i] ~ censored(
-            JointModel(baseline_hazard, γ, id_link),
-            upper = censoring
-        )
+        try
+            surv_times[i] ~
+                censored(JointModel(baseline_hazard, γ, id_link), upper = censoring)
+        catch
+        end
     end
 end
 ```
-When sampling the posterior the log probability density function of the joint model is called conditioned on specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Sampling with the NUTS algorithm 400 posterior samples using 200 burn-in results in posterior statistic:
+When sampling the posterior the log probability density function of the joint model is called conditioned on specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Sampling with the `Turing.Inference.NUTS` algorithm 400 posterior samples using 200 burn-in results in posterior statistic:
 
 ```
 parameters        mean        std      mcse       rhat  |  ture_parameters    
@@ -236,12 +243,12 @@ parameters        mean        std      mcse       rhat  |  ture_parameters
 Notice that the link coefficient $\gamma$ was sampled around the true value with a narrow variance. In general the survival parameters are well represented by the posterior samples. The mixed effects model parameters as well indicated by the $\hat r$ value which is close to one, with the potential exception of $\mu_d$.
 
 
-Additionally, `JointModels.jl` implements the generation of random samples of a joint distribution which enables `Turing.jl` to sample a joint distribution. This allows to create posterior predictive checks or simulations, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
+Additionally, `JointModels.jl` implements the generation of random samples of a joint distribution which enables `Turing.jl` to sample a joint distribution. This allows to create posterior predictive checks, simulations or individual predictions \autoref{fig:ind_pred}, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
 
-![Individual posterior predictions \label{fig:ind_pred}](individual_prediction.svg){ width=80% }
+![The figure showcases individual posterior prediction for the mixed effects longitudinal sub model along side the longitudinal observations. The figure also shows the individual survival predictions conditioned on survival until the last measurement based on the joint survival distribution. The light colored ribbons represent the 95% quantile of the posterior predictions while the line represents the median. To create the posterior predictions the above `Turing.jl` model was used. \label{fig:ind_pred}](individual_prediction.svg){ width=80% }
 
 
-The figure \autoref{fig:ind_pred} showcases posterior predictions for the mixed effects longitudinal sub model along side the longitudinal observations for a specific individual. The figure also shows the individual survival predictions conditioned on survival until the last measurement based on the joint survival distribution. The light colored ribbons represent the 95% quantile of the posterior predictions while the line represents the median. To create the posterior predictions the above `Turing.jl` model was used.
+
 
 
 
