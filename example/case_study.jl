@@ -74,7 +74,7 @@ h_0(t, λ) = 1/λ
     Ω = (BSLD = ω_BSLD^2, d = ω_d^2, g = ω_g^2, φ = ω_φ^2)
     # multiplicative error
     σ ~ LogNormal(0, 1)
-    ## priors survival
+    ## prior survival
     λ ~ LogNormal(5, 1)
 
     ## prior joint model
