@@ -34,7 +34,7 @@ bibliography: paper.bib
 
 # Statement of need
 
-Over the last decade, there has been a growing interest in joint models for longitudinal and time-to-event outcome data. This is the case in clinical research where biomarkers are often measured repeatedly over time, with the expectation that they may provide insights into the likelihood of a long-term clinical outcome such as disease progression or adverse events. As a consequence, joint models have been proposed to leverage this data and used for the prediction of individual risks, the evaluation of surrogacy of a biomarker for a clinical outcome, and for making inferences about treatment in various therapeutic areas.
+Over the last decade, there has been a growing interest in joint models for longitudinal and time-to-event outcome data. This is the case in clinical research where biomarkers are often measured repeatedly over time, with the expectation that they may provide insights into the likelihood of a long-term clinical outcome such as disease progression or adverse events. As a consequence, joint models have been proposed to leverage this data and used for the prediction of individual risks, the evaluation of a biomarker for a clinical outcome, and for making inferences about treatment.
 
 In oncology, it is well known that the individual risk of death depends on the treatment-induced changes in tumor size over time [@Tardivon2019]. Because pharmacologic effects are typically transient, nonlinear mixed-effect models are required to capture central tendency and inter-individual variability in tumor size, while parametric models can be used for analysing time to death. Joint models have been used in other therapeutic areas such as neurology [@Khnel2021], cardiovascular disease [@KassahunYimer2020], or infection diseases [@Wu2007].
 
@@ -48,7 +48,7 @@ To build a joint model, we augment the survival analysis hazard function $h(t) =
 
 $$ h(t) = h_0(t) \exp(\gamma\cdot l(m(t))).$$
 
-Where $l$ is the link to the longitudinal model. In general, the link is an operator on the longitudinal models. Some examples of links $l(m(t)) = (l \circ m)(t)$ are given in @Rizopoulos2012 such as the derivative $d/dt \; m(t)$ or integral $\int_0^t m(u) \, du$ operators.
+Where $l$ is the link to the longitudinal model. In general, the link is an operator on the parametric longitudinal models. Some examples of links $l(m(t)) = (l \circ m)(t)$ are given in @Rizopoulos2012 such as the derivative $d/dt \; m(t)$ or integral $\int_0^t m(u) \, du$ operators.
 
 
 Now we extend this idea to multiple longitudinal models. Suppose that we have $k\in \mathbb{N}$ longitudinal models $\{m_{1},\dots, m_{k}\}$ as well as $k$ link functions $\{l_{1},\dots, l_{k}\}$. Let $M: \mathbb{R} \to \mathbb{R}^k$ and $L:\mathbb{R}^k \to \mathbb{R}^k$ be the vector of functions
@@ -142,7 +142,7 @@ The identity $id$ was used as a link. In code the distribution of the joint mode
 my_jm(λ, γ, Ψ_i, tx) = JointModel(t -> h_0(t, λ), γ, t -> sld(t, Ψ_i, tx))
 ```
 
-The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and random effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega), \Omega = \text{diag}(\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For $\text{BSLD}, g, d$ a log-normal transform $\log(\Psi_{g,i}) = log (\mu_g) + \eta_{g,i}$ was used while for $\phi$ a logit transform $\text{logit}(\Psi_{\phi,1}) = \text{logit}(\mu_\phi) + \eta_{\phi,1} $ was used.
+The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and random effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega), \Omega = \text{diag}(\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For $\text{BSLD}, g, d$ a log-normal transform $\log(\Psi_{q,i}) = log (\mu_q) + \eta_{q,i},\, q\in \{\text{BSLD}, g, d\}$ was used while for $\phi$ a logit transform $\text{logit}(\Psi_{\phi,1}) = \text{logit}(\mu_\phi) + \eta_{\phi,1} $ was used.
 
 With this information, a Bayesian model can be specified in `Turing.jl` [@Turing] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the `JointModel` is used. This results in a canonical translation of the statistical ideas into code. For longitudinal data, a multiplicative error model is used using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from @Kerioui2020 can be implemented as follows in code:
 
