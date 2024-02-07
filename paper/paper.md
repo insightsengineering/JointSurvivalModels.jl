@@ -250,7 +250,7 @@ Additionally, `JointModels.jl` implements the generation of random samples of a 
 
 # Acknowledgements
 
-Professor Peter Bühlmann from ETH Zürich enabled the development and subsequently open source project. The initial development was made at Hoffmann-La Roche Ltd.
+This software was initially developed at Hoffmann-La Roche Ltd. before transitioning into an open source project. Professor Peter Bühlmann from ETH Zürich facilitated the development and open source project.
 
 
 # References
