@@ -133,9 +133,9 @@ For the survival distribution they use an Exponential distribution which has a c
 h_0(t, λ) = 1/λ
 ```
 
-In the mixed effects model every individual $i$ has a different parameter denoted by $\Psi_i$ resulting in the joint hazard for individual $i$
+In the mixed effects model every individual $i$ has a different mixed effects parameter denoted by $\Psi_i$ which defines the longitudinal model $M_i(t) = \text{SLD}(t,\Psi_i)$ resulting in the joint hazard for individual $i$
 
-$$h_i(t) = h_0(t) \exp(\gamma \cdot L(M(t))) = h_0(t) \exp(\gamma * \text{id}(\text{SLD}(t, \Psi_i))).$$
+$$h_i(t) = h_0(t) \exp(\gamma \cdot L(M_i(t))) = h_0(t) \exp(\gamma * \text{id}(\text{SLD}(t, \Psi_i))).$$
 
 The identity $id$ was used as a link. In code the distribution of the joint model defined by this hazard is given by:
 ```julia
@@ -144,7 +144,7 @@ my_jm(λ, γ, Ψ_i, tx) = JointModel(t -> h_0(t, λ), γ, t -> sld(t, Ψ_i, tx))
 
 The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and random effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega), \Omega = \text{diag}(\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For $\text{BSLD}, g, d$ a log-normal transform $\log(\Psi_{g,i}) = log (\mu_g) + \eta_{g,i}$ was used while for $\phi$ a logit transform $\text{logit}(\Psi_{\phi,1}) = \text{logit}(\mu_\phi) + \eta_{\phi,1} $ was used.
 
-With this information, a Bayesian model can be specified in `Turing.jl` [@Turing] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the software is used. This results in a canonical translation of the statistical ideas into code. For longitudinal data, a multiplicative error model is used using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from @Kerioui2020 can be implemented as follows in code:
+With this information, a Bayesian model can be specified in `Turing.jl` [@Turing] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the `JointModel` is used. This results in a canonical translation of the statistical ideas into code. For longitudinal data, a multiplicative error model is used using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from @Kerioui2020 can be implemented as follows in code:
 
 ```julia
 @model function identity_link(
@@ -222,21 +222,21 @@ With this information, a Bayesian model can be specified in `Turing.jl` [@Turing
     end
 end
 ```
-When sampling the posterior the log probability density function of the joint model is called conditioned on specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Sampling with the `Turing.Inference.NUTS` algorithm 400 posterior samples using 200 burn-in results in posterior statistic:
+When sampling the posterior the log probability density function of the joint model is called conditioned on specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Sampling with the `Turing.Inference.NUTS` algorithm 2000 posterior samples using 1000 burn-in results in posterior statistic:
 
 ```
 parameters        mean        std      mcse       rhat  |  ture_parameters    
     Symbol     Float64    Float64   Float64    Float64  |       
 
-    μ_BSLD     62.1952     4.8282    0.7664     1.0096  |        60
-       μ_d      0.0056     0.0015    0.0002     1.0473  |         0.0055 
-       μ_g      0.0017     0.0003    0.0000     0.9986  |         0.0015
-       μ_φ      0.1807     0.0615    0.0079     1.0066  |         0.2
-         σ      0.1768     0.0063    0.0006     1.0283  |         0.18
-         λ   1393.6532   286.6294   15.9133     0.0059  |      1450
-         γ      0.0103     0.0012    0.0001     0.0005  |         0.01
+    μ_BSLD     61.3971     4.4043    0.2737     1.0021  |        60
+       μ_d      0.0058     0.0014    0.0001     0.9998  |         0.0055 
+       μ_g      0.0018     0.0002    0.0000     0.9998  |         0.0015
+       μ_φ      0.1729     0.0591    0.0049     1.0001  |         0.2
+         σ      0.1767     0.0057    0.0001     1.0008  |         0.18
+         λ   1491.2720   307.5059    6.4314     0.0008  |      1450
+         γ      0.0103     0.0012    0.0000     1.0005  |         0.01
 ```
-Notice that the link coefficient $\gamma$ was sampled around the true value with a narrow variance. In general the survival parameters are well represented by the posterior samples. The mixed effects model parameters as well indicated by the $\hat r$ value which is close to one, with the potential exception of $\mu_d$.
+Notice that the link coefficient $\gamma$ was sampled around the true value $0.01$ with a narrow variance. In general the survival and population parameters are well represented by the posterior samples indicated by the $\hat r$ value which is close to one.
 
 
 Additionally, `JointModels.jl` implements the generation of random samples of a joint distribution which enables `Turing.jl` to sample a joint distribution. This allows to create posterior predictive checks, simulations or individual predictions \autoref{fig:ind_pred}, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
