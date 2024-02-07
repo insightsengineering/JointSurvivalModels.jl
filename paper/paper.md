@@ -1,20 +1,23 @@
 ---
 title: 'JointModels.jl: Numeric approach to joint models'
 tags:
-  - Julia
-  - Joint Model
-  - Biostatistics
   - Survival analysis
-  - Bayesian statistics
+  - Nonlinear
+  - Biostatistics
+  - Time-to-event
+  - Mixed-effects model
 authors:
   - name: Yannik Ammann
+    orcid: 0009-0009-3296-3577
     affiliation: "1, 2"
-  - name: Lorem
-    orcid: 0000-0000-0000-0000
-    equal-contrib: true
+  - name: Daniel Sabanés Bové
     affiliation: 2
-  - name: Yannik Ammann
-    affiliation: "1, 2"
+  - name: Francois Mercier
+    orcid: 0000-0002-5685-1408
+    affiliation: 2
+  - name: Douglas O. Kelkhoff 
+    orcid: 0009-0003-7845-4061 
+    affiliation: 2
   
 affiliations:
  - name: ETH Zürich, Switzerland
@@ -23,11 +26,6 @@ affiliations:
    index: 2
 date: 02 February 2024
 bibliography: paper.bib
-
-# Optional fields if submitting to a AAS journal too, see this blog post:
-# https://blog.joss.theoj.org/2018/12/a-new-collaboration-with-aas-publishing
-aas-doi: 10.3847/xxxxx <- update this with the DOI from AAS once you know it.
-aas-journal: Astrophysical Journal <- The name of the AAS journal.
 ---
 
 # Summary
@@ -108,7 +106,7 @@ $$\log( L(t_{ij},y_{ij} | \theta_L)) = \log(p_{m_i(t_{ij})}(y_{ij}))$$
 
 # Example
 
-The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models using `JointModels.jl`. The code can be found in the [example](https://github.com/insightsengineering/JointModels.jl/tree/main/example) folder in the project repository. Following @Kerioui2020 a longitudinal model for the sum of longest diameters $\text{SLD}: \mathbb{R} \to \mathbb{R}_{\geq 0}$ is specified with parameters  $\Psi = (\text{BSLD}, g, d, \phi)$ where $ \text{BSLD}, g, d \in \mathbb{R}_{\geq 0},\; \phi \in [0,1]$ and start of treatment $t_x$
+The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models using `JointModels.jl`. The code can be found in the [example](https://github.com/insightsengineering/JointModels.jl/tree/main/example) folder in the project repository. Following @Kerioui2020 a longitudinal model for the sum of longest diameters $\text{SLD}: \mathbb{R} \to \mathbb{R}_{\geq 0}$ is specified with parameters  $\Psi = (\text{BSLD}, g, d, \phi)$ where $\text{BSLD}, g, d \in \mathbb{R}_{\geq 0},\; \phi \in [0,1]$ and start of treatment $t_x$
 
 $$\text{SLD}(t,\Psi) = \begin{cases}
     \text{BSLD}\exp(gt) & t < t_x \\
