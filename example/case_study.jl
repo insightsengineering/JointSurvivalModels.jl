@@ -137,9 +137,9 @@ init_params = (
 
 
 identity_link_model = identity_link(longit_id, longit_time, longit_sld, surv_id, surv_time, surv_indicator)
-identity_link_chn = sample(identity_link_model, NUTS(1000, 0.9, max_depth = 8), 2000, init_params=init_params)
-
-# [κ, λ, β] = [1.1500626704863541, 3.9408207824225534, 0.026148519352791527]
+identity_link_chn = sample(identity_link_model, NUTS(50, 0.9, max_depth = 8), 100, init_params=init_params)
+# more samples
+# identity_link_chn = sample(identity_link_model, NUTS(1000, 0.9, max_depth = 8), 2000, init_params=init_params)
 
 # --------------------------------------------------------------
 # diagnostics
@@ -149,7 +149,6 @@ identity_link_chn = sample(identity_link_model, NUTS(1000, 0.9, max_depth = 8), 
 para_names = [:μ_BSLD, :μ_d, :μ_g, :μ_φ, :σ, :κ, :λ, :β]
 display(identity_link_chn[para_names])
 plot(identity_link_chn[para_names])
-
 
 
 # individual predictions

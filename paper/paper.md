@@ -142,9 +142,9 @@ The identity $id$ was used as a link. In code, the distribution of the joint mod
 my_jm(λ, γ, Ψ_i, tx) = JointModel(t -> h_0(t, λ), γ, t -> sld(t, Ψ_i, tx))
 ```
 
-The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and random effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega), \Omega = \text{diag}(\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For $\text{BSLD}, g, d$ a log-normal transform $\log(\Psi_{q,i}) = log (\mu_q) + \eta_{q,i},\, q\in \{\text{BSLD}, g, d\}$ was used while for $\phi$ a logit transform $\text{logit}(\Psi_{\phi,1}) = \text{logit}(\mu_\phi) + \eta_{\phi,1} $ was used.
+The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and random effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega), \Omega = \text{diag}(\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For $\text{BSLD}, g, d$ a log-normal transform $\log(\Psi_{q,i}) = log (\mu_q) + \eta_{q,i},\, q\in \{\text{BSLD}, g, d\}$ was used while for $\phi$ a logit transform $\text{logit}(\Psi_{\phi,1}) = \text{logit}(\mu_\phi) + \eta_{\phi,1}$ was used.
 
-With this information, a Bayesian model can be specified in `Turing.jl` [@Turing] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the `JointModel` is used. This results in a canonical translation of the statistical ideas into code. For longitudinal data, a multiplicative error model is used using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from @Kerioui2020 can be implemented as follows in code:
+With this information, a Bayesian model can be specified in `Turing.jl` [@Turing.jl] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the `JointModel` is used. This results in a canonical translation of the statistical ideas into code. For longitudinal data, a multiplicative error model is used using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from @Kerioui2020 can be implemented as follows in code:
 
 ```julia
 @model function identity_link(
@@ -155,7 +155,7 @@ With this information, a Bayesian model can be specified in `Turing.jl` [@Turing
     surv_times,
     surv_event,
 )
-    # treatment at study star
+    # treatment start at study start
     tx = 0.0
     # number of longitudinal and survival measurements
     n = length(surv_ids)
@@ -163,38 +163,35 @@ With this information, a Bayesian model can be specified in `Turing.jl` [@Turing
 
     # ---------------- Priors -----------------
     ## priors longitudinal
-    # μ priors, population parameters
+    # population parameters
     μ_BSLD ~ LogNormal(3.5, 1)
     μ_d ~ Beta(1, 100)
     μ_g ~ Beta(1, 100)
     μ_φ ~ Beta(2, 4)
     μ = (BSLD = μ_BSLD, d = μ_d, g = μ_g, φ = μ_φ)
-    # ω priors, mixed/individual effects
+    # standard deviation of random effects
     ω_BSLD ~ LogNormal(0, 1)
     ω_d ~ LogNormal(0, 1)
     ω_g ~ LogNormal(0, 1)
     ω_φ ~ LogNormal(0, 1)
     Ω = (BSLD = ω_BSLD^2, d = ω_d^2, g = ω_g^2, φ = ω_φ^2)
-    # multiplicative error
-    σ ~ LogNormal(0, 1)
-    ## prior survival
-    λ ~ LogNormal(5, 1)
-
-    ## prior joint model
-    γ ~ truncated(Normal(0, 0.5), -0.1, 0.1)
-
-    ## η describing the mixed effects of the population
+    ## η describing the random effects
     η_BSLD ~ filldist(Normal(0, Ω.BSLD), n)
     η_d ~ filldist(Normal(0, Ω.d), n)
     η_g ~ filldist(Normal(0, Ω.g), n)
     η_φ ~ filldist(Normal(0, Ω.φ), n)
-    η = [(BSLD = η_BSLD[i], d = η_d[i], g = η_g[i], φ = η_φ[i]) for i = 1:n]
     # Transforms
     Ψ = [  [μ_BSLD * exp(η_BSLD[i]),
             μ_g * exp(η_g[i]),
             μ_d * exp(η_d[i]),
             inverse(logit)(logit(μ_φ) + (η_φ[i])),] 
          for i = 1:n]
+    # multiplicative error
+    σ ~ LogNormal(0, 1)
+    ## prior survival
+    λ ~ LogNormal(5, 1)
+    ## prior joint model
+    γ ~ truncated(Normal(0, 0.5), -0.1, 0.1)
 
     # ---------------- Likelihoods -----------------
     # add the likelihood of the longitudinal process
