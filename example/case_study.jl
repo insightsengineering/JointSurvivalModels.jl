@@ -103,9 +103,9 @@ h_0(t, κ, λ) = κ/λ * (t/λ)^(κ - 1)
         id = Int(surv_ids[i])
         id_link(t) = sld(t, Ψ[id], tx)
         censoring = Bool(surv_event[id]) ? Inf : surv_times[id]
-        # here we use the GeneralJointModel
+        # here we use the JointModel
         try
-            surv_times[i] ~ censored(GeneralJointModel(baseline_hazard, β, id_link), upper = censoring)
+            surv_times[i] ~ censored(JointModel(baseline_hazard, β, id_link), upper = censoring)
         catch
         end
     end

@@ -6,6 +6,14 @@ using Distributions
 makedocs(
     sitename = "JointModels",
     format = Documenter.HTML(),
+    pages = [
+        "Home" => "index.md",
+        "First Example" => "FirstExample.md",
+        "API" => Any[
+            "JointModel" => "JointModel.md",
+            "HazardBasedDistribution" => "HazardBasedDistribution.md"
+        ],
+    ],
     modules = [JointModels]
 )
 
@@ -13,5 +21,5 @@ makedocs(
 # See "Hosting Documentation" and deploydocs() in the Documenter manual
 # for more information.
 deploydocs(
-    repo = "github.com/insightsengineering/jointmodels.jl.git",
+    repo = "github.com/insightsengineering/JointModels.jl.git",
 )

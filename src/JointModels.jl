@@ -18,7 +18,7 @@ export
     cdf,
     ccdf,
     rand,
-    GeneralJointModel
+    JointModel
 
 
 include("hazarddistribution.jl")
