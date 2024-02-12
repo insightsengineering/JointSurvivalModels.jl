@@ -1,7 +1,7 @@
-# General Joint Model
+# Joint Model
 
 
-This struct implements a general family of joint models. Let $h_0:\mathbb{R} \to\mathbb{R}_{+}$ be a baseline hazard function. Suppose we have $k\in \mathbb{N}$ longitudinal models $\{m_{1},\dots, m_{k}\}\subset \{\text{Functions: }\mathbb{R}\to\mathbb{R}\}$ as well as $k$ links $\{l_{1},\dots, l_{k}\}\subset \{\text{Operators on functions: }\mathbb{R}\to\mathbb{R}\}$. Let $M: \mathbb{R} \to \mathbb{R}^k$ and $L:\mathbb{R}^k \to \mathbb{R}^k$ be the multidimensional vector versions
+This type implements a general family of joint models. Let $h_0:\mathbb{R} \to\mathbb{R}_{+}$ be a baseline hazard function. Suppose we have $k\in \mathbb{N}$ longitudinal models $\{m_{1},\dots, m_{k}\}\subset \{\text{Functions: }\mathbb{R}\to\mathbb{R}\}$ as well as $k$ links $\{l_{1},\dots, l_{k}\}\subset \{\text{Operators on functions: }\mathbb{R}\to\mathbb{R}\}$. Let $M: \mathbb{R} \to \mathbb{R}^k$ and $L:\mathbb{R}^k \to \mathbb{R}^k$ be the multidimensional vector versions
 
 ```math
 \begin{align*}
@@ -32,15 +32,15 @@ h(t) &= h_0(t) \exp\left(\gamma' \cdot L(M(t)) + \beta' \cdot x\right)\\
      &= h_0(t) \exp\left(\sum_{j\in [k]}\gamma_{j} l_j(m_{j}(t)) + \sum_{j\in [l]} x_j  \beta_j  \right),
 \end{align*}
 ```
-which is implemented in the general joint model:
+which is implemented in `JointModel`:
 
 
 ```@docs
-JointModels.GeneralJointModel
+JointModels.JointModel
 ```
 
 Its hazard is calculated by:
 
 ```@docs
-JointModels.hazard(jm::GeneralJointModel, t::Real)
+JointModels.hazard(jm::JointModel, t::Real)
 ```
