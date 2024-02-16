@@ -22,6 +22,6 @@ export
 
 
 include("hazarddistribution.jl")
-include("JointSurvivalModel.jl")
+include("jointsurvivalmodel.jl")
 
 end # module JointSurvivalModels
