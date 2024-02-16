@@ -1,5 +1,5 @@
 ---
-title: 'JointModels.jl: Numeric approach to joint models'
+title: 'JointSurvivalModels.jl: Numeric approach to joint models'
 tags:
   - Julia
   - Joint Model
@@ -112,7 +112,7 @@ $$\log( L(t_{ij},y_{ij} | \theta_L)) = \log(p_{m_i(t_{ij})}(y_{ij}))$$
 
 # Example
 
-The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models using `JointModels.jl`. It follows the simulation study by [@Kerioui2020]. They specify a longitudinal model for $\Psi = (\text{BSLD}, g, d, \phi) \in \mathbb{R}^4$ as
+The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models using `JointSurvivalModels.jl`. It follows the simulation study by [@Kerioui2020]. They specify a longitudinal model for $\Psi = (\text{BSLD}, g, d, \phi) \in \mathbb{R}^4$ as
 
 $$\text{SLD}(t,\Psi) = \begin{cases}
     \text{BSLD}\exp(gt) & t < t_x \\
@@ -145,7 +145,7 @@ $$h_i(t) = h_0(t) \exp(b * \text{SLD}(t, \Psi)).$$
 
 In code the distribution of the joint model defined by this hazard is given by:
 ```julia
-my_jm(κ, λ, γ, Ψ, tx) = JointModel(t -> h_0(t, κ, λ), γ, t -> sld(t, Ψ, tx))
+my_jm(κ, λ, γ, Ψ, tx) = JointSurvivalModel(t -> h_0(t, κ, λ), γ, t -> sld(t, Ψ, tx))
 ```
 
 The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and mixed effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega), \Omega = (\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For biological constraints, the parameters were transformed such that $\phi_q(\Psi_{q,i}) = \phi_q\mu_q + \eta_{q,i}$ for $q\in \{\text{BSLD}, d, g, \phi\}$. For $\text{BSLD}, g, d$ a log-normal $(\phi = log)$ transform was assumed and for $\phi$ a logit-normal $(\sigma = \text{logit})$.
@@ -214,9 +214,9 @@ With this information, a Bayesian model can be specified in Turing.jl [@Turing.j
         id = Int(surv_ids[i])
         id_link(t) = sld(t, Ψ[id], tx)
         censoring = Bool(surv_event[id]) ? Inf : surv_times[id]
-        # here we use the JointModel
+        # here we use the JointSurvivalModel
         surv_times[i] ~ censored(
-            JointModel(baseline_hazard, γ, id_link),
+            JointSurvivalModel(baseline_hazard, γ, id_link),
             upper = censoring
         )
     end

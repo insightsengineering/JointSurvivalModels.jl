@@ -1,4 +1,4 @@
-name = "JointModels"
+name = "JointSurvivalModels"
 uuid = "54f05ff3-c196-4f1a-acfd-0c2b8e4405db"
 authors = ["Yannik Ammann <ammanny@roche.com>"]
 version = "0.3.0"

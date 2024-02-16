@@ -1,7 +1,7 @@
 # First Example
 
 ## Joint Models
-The struct `JointModel` allows you to implement joint models. Let us consider a simple example. First we describe a model and generate data. Assume a non-linear mixed effects model for individual ``i \in \{1,2,\dots,100\}``
+The struct `JointSurvivalModel` allows you to implement joint models. Let us consider a simple example. First we describe a model and generate data. Assume a non-linear mixed effects model for individual ``i \in \{1,2,\dots,100\}``
 
 ```math
 m_i(t) = t^{a_i} * (1+\cos(b * t)^2),
@@ -22,7 +22,7 @@ In code:
 ```julia
 parametric_m_i(t, i, a, b) = t^(a[i]) * (1+cos(b * t)^2)
 parametric_h_0(t, α, θ) = α/θ *(t/θ)^(1-α)
-parametric_joint_model(i, a, b, γ, α, θ) = JointModel(
+parametric_joint_model(i, a, b, γ, α, θ) = JointSurvivalModel(
     t -> parametric_h_0(t, α, θ),   # baseline hazard function
     γ,                              # link coefficient
     t -> parametric_m_i(t, i, a, b)            # link function
@@ -33,7 +33,7 @@ parametric_joint_model(i, a, b, γ, α, θ) = JointModel(
 To simulate data for 100 individuals we assume ``a_i \sim Beta(2,10)`` and ``b = 3, γ = 0.02, \alpha = 1.2, \theta = 50``:
 ```julia
 using Distributions
-using JointModels
+using JointSurvivalModels
 using Random
 Random.seed!(222)
 n = 100 # number of individuals
@@ -46,7 +46,7 @@ b = 0.2
 
 m(i) = t -> parametric_m_i(t, i, a, b)
 h_0(t) = parametric_h_0(t, α, θ)
-joint_models = [JointModel(h_0, γ, m(i)) for i in 1:n] # joint models for all individuals
+joint_models = [JointSurvivalModel(h_0, γ, m(i)) for i in 1:n] # joint models for all individuals
 ```
 
 Inspecting individual ``1`` and ``2``.
@@ -139,7 +139,7 @@ Now a two step joint model, where we use the posterior mean of the population an
     # models
     m(i) = t -> parametric_m_i(t, i, a, b)
     h_0(t) = parametric_h_0(t, α, θ)
-    joint_models = [JointModel(h_0, γ, m(i)) for i in 1:n]
+    joint_models = [JointSurvivalModel(h_0, γ, m(i)) for i in 1:n]
 
     # survival likelihood
     for i in 1:n
@@ -168,7 +168,7 @@ Finally a joint model where the posterior of the longitudinal and joint survival
     # models
     m(i) = t -> parametric_m_i(t, i, a, b)
     h_0(t) = parametric_h_0(t, α, θ)
-    joint_models = [JointModel(h_0, γ, m(i)) for i in 1:n]
+    joint_models = [JointSurvivalModel(h_0, γ, m(i)) for i in 1:n]
     # longitudinal likelihood
     for i in 1:n
         n_i = length(Y[i])
