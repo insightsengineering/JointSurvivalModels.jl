@@ -29,26 +29,26 @@ bibliography: paper.bib
 ---
 
 # Summary
-`JointModels.jl` implements a numerical approach to define a distribution based on the survival hazard function. In particular, this provides a mechanism for defining joint models of time-to-even data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation can generate samples of joint models. This allows its use in simulations and predictions, which are common in Bayesian workflows [@BayesianWorkflow].
+`JointModels.jl` implements a numerical approach to define a distribution based on the hazard function. In particular, this provides a mechanism for defining joint models of time-to-event data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation can generate samples of joint models. This allows its use in simulations and predictions, which are common in Bayesian workflows [@BayesianWorkflow].
 
 
 # Statement of need
 
-Over the last decade, there has been a growing interest in joint models for longitudinal and time-to-event outcome data. This is the case in clinical research where biomarkers are often measured repeatedly over time, with the expectation that they may provide insights into the likelihood of a long-term clinical outcome such as disease progression or adverse events. As a consequence, joint models have been proposed to leverage this data and used for the prediction of individual risks, the evaluation of a biomarker for a clinical outcome, and for making inferences about treatment.
+Over the last decade, there has been a growing interest in joint models for longitudinal and time-to-event outcome data. This is the case in clinical research where biomarkers are often measured repeatedly over time, with the expectation that they may provide insights into the likelihood of a long-term clinical outcome such as disease progression or adverse events. As a consequence, joint models have been proposed to leverage this data and be used for the prediction of individual risks, the evaluation of a biomarker for a clinical outcome, and for making inferences about treatment.
 
-In oncology, it is well known that the individual risk of death depends on the treatment-induced changes in tumor size over time [@Tardivon2019]. Because pharmacologic effects are typically transient, nonlinear mixed-effect models are required to capture central tendency and inter-individual variability in tumor size, while parametric models can be used for analyzing time to death. Joint models have been used in other therapeutic areas such as neurology [@Khnel2021], cardiovascular disease [@KassahunYimer2020], or infection diseases [@Wu2007].
+In oncology, it is well known that the individual risk of death correlates with the treatment-induced changes in tumor size over time [@Tardivon2019]. Because pharmacologic effects are typically transient, nonlinear mixed-effect models are required to capture central tendency and inter-individual variability in tumor size, while parametric models can be used for analyzing time to death. Joint models have been used in other therapeutic areas such as neurology [@Khnel2021], cardiovascular disease [@KassahunYimer2020], or infection diseases [@Wu2007].
 
-The current landscape of open-source software allowing end-users to easily fit and use joint models consists primarily of R packages such as JMbayes [@JMbayes], rstanarm [@rstanarm], joineR [@joineR], or JM [@JM]. These packages typically limit the longitudinal model to linear forms (for the parameters) preventing users from fitting joint models with saturating biological processes resulting in nonlinear profiles for the biomarker.
-In contrast, the present software supports fitting any longitudinal and survival model, provided the joint model fulfills continuity and certain smoothness characteristics for numerical procedures. Such flexibility is crucial for studying complex biological processes.
+The current landscape of open-source software allowing end-users to easily fit and use joint models consists primarily of R packages such as JMbayes [@JMbayes], rstanarm [@rstanarm], joineR [@joineR], and JM [@JM]. These packages typically limit the longitudinal model to linear forms (for the parameters) preventing users from fitting joint models with saturating biological processes resulting in nonlinear profiles for the biomarker.
+In contrast, the present software supports fitting any longitudinal and survival model, provided the joint model fulfills continuity and certain smoothness characteristics required for numerical procedures. Such flexibility is crucial for studying complex biological processes.
 
 # Formulation
 
 
-To build a joint model, we augment the survival analysis hazard function $h(t) = \lim_{\delta \to 0} P(t\leq T\leq t+\delta | T \geq t)/\delta$ for a positive random variable $T$, by incorporating a link $l$ to a longitudinal process. The longitudinal process is modeled by a function $m:\mathbb{R} \to \mathbb{R}$, for example a non-linear mixed effects model [@Wu2007]. Let the function $h_0:\mathbb{R} \to \mathbb{R}_{\geq 0}$ describe a baseline hazard and $\gamma\in\mathbb{R}$ be a coefficient of the link contribution. The hazard of the joint model is
+To build a joint model, we augment the survival analysis hazard function in time $h(t) = \lim_{\delta \to 0} P(t\leq T\leq t+\delta | T \geq t)/\delta$ for a positive random variable $T$, by incorporating a link $l$ to a longitudinal process. The longitudinal process is modeled by a function $m:\mathbb{R} \to \mathbb{R}$, for example a non-linear mixed effects model [@Wu2007]. Let the function $h_0:\mathbb{R} \to \mathbb{R}_{\geq 0}$ describe a baseline hazard and $\gamma\in\mathbb{R}$ be a coefficient of the link contribution. The hazard of the joint model is
 
-$$ h(t) = h_0(t) \exp(\gamma\cdot l(m(t))).$$
+$$ h(t) = h_0(t) \exp(\gamma\cdot l(m(t))),$$
 
-Where $l$ is the link to the longitudinal model. In general, the link is an operator on the parametric longitudinal models. Some examples of links $l(m(t)) = (l \circ m)(t)$ are given in @Rizopoulos2012 such as the derivative $d/dt \; m(t)$ or integral $\int_0^t m(u) \, du$ operators.
+where $l$ is the link to the longitudinal model. Some examples of links $l(m(t)) = (l \circ m)(t)$ are given in @Rizopoulos2012 such as the derivative $d/dt \; m(t)$ or integral $\int_0^t m(u) \, du$ operators.
 
 
 Now we extend this idea to multiple longitudinal models. Suppose that we have $k\in \mathbb{N}$ longitudinal models $\{m_{1},\dots, m_{k}\}$ as well as $k$ link functions $\{l_{1},\dots, l_{k}\}$. Let $M: \mathbb{R} \to \mathbb{R}^k$ and $L:\mathbb{R}^k \to \mathbb{R}^k$ be the vector of functions
@@ -75,9 +75,9 @@ $$h(t) = h_0(t) \exp\left(\sum_{j = 1}^{k}\gamma_{j} l_j(m_{j}(t))  \right) = h_
 In addition, we consider covariates $x\in \mathbb{R}^p, p\in\mathbb{N}$ and coefficients $\beta \in \mathbb{R}^p$. This results in the hazard
 $$h(t) = h_0(t) \exp\left(\gamma^\top \cdot L(M(t)) +  \beta^\top \cdot x \right).$$
 
-The probability density function in survival analysis can be described by
+The probability density function in survival analysis can be described using the hazard function
 $$f(t) = h(t) \exp\left(-\int_0^t h(u) \, du\right).$$
-Note for nonlinear longitudinal models $\int_0^t h(u) \, du$ generally does not have a closed form, thus numerical integration is required.
+Note for joint models with links to nonlinear longitudinal models $\int_0^t h(u) \, du$ generally does not have a closed form, thus numerical integration is required.
 
 
 ## Likelihood calculations
@@ -160,7 +160,6 @@ With this information, a Bayesian model can be specified in `Turing.jl` [@Turing
     # number of longitudinal and survival measurements
     n = length(surv_ids)
     m = length(longit_ids)
-
     # ---------------- Priors -----------------
     ## priors longitudinal
     # population parameters
@@ -192,7 +191,6 @@ With this information, a Bayesian model can be specified in `Turing.jl` [@Turing
     λ ~ LogNormal(5, 1)
     ## prior joint model
     γ ~ truncated(Normal(0, 0.5), -0.1, 0.1)
-
     # ---------------- Likelihoods -----------------
     # add the likelihood of the longitudinal process
     for data in 1:m
@@ -219,7 +217,7 @@ With this information, a Bayesian model can be specified in `Turing.jl` [@Turing
     end
 end
 ```
-When sampling the posterior the log probability density function `logpdf` implemented in `JointModels.jl` is called for a distribution given specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Sampling with the `Turing.Inference.NUTS` algorithm 2000 posterior samples using 1000 burn-in results in posterior statistic:
+When sampling the posterior the log probability density function `logpdf` implemented in `JointModels.jl` is called for a distribution given specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Sampling with the `Turing.Inference.NUTS` algorithm 2'000 posterior samples using 1'000 burn-in samples results in posterior statistic:
 
 ```
 parameters        mean        std      mcse       rhat  |  ture_parameters    
@@ -233,12 +231,12 @@ parameters        mean        std      mcse       rhat  |  ture_parameters
          λ   1491.2720   307.5059    6.4314     1.0008  |      1450
          γ      0.0103     0.0012    0.0000     1.0005  |         0.01
 ```
-Notice that the link coefficient $\gamma$ was sampled around the true value $0.01$ with a narrow variance. The survival and population parameters are well represented by the posterior samples indicated by the $\hat r$ value, which is close to one and the relative closeness to the true parameter.
+Notice that the link coefficient $\gamma$ was sampled around the true value $0.01$ with a small variance. The survival and population parameters are well represented by the posterior samples indicated by the $\hat r$ value close to one and the relative closeness of the mean to the true parameter.
 
 
-Additionally, `JointModels.jl` implements the generation of random samples of a joint distribution which enables `Turing.jl` to sample a joint distribution. This allows the creation of posterior predictive checks, simulations, or individual predictions \autoref{fig:ind_pred}, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
+Additionally, `JointModels.jl` implements the generation of random samples of a joint distribution. This allows the creation of posterior predictive checks, simulations, or individual predictions \autoref{fig:ind_pred} using `Turing.jl`, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
 
-![The figure showcases individual posterior prediction for the mixed effects longitudinal sub-model along side the longitudinal observations. The figure also shows the individual survival predictions conditioned on survival until the last measurement based on the joint survival distribution. The light-colored ribbons represent the 95% quantile of the posterior predictions while the line represents the median. To create the posterior predictions the above `Turing.jl` model was used. \label{fig:ind_pred}](individual_prediction.svg){ width=80% }
+![The figure showcases individual posterior prediction for the mixed effects longitudinal sub-model alongside the longitudinal observations. The figure also shows the individual survival predictions conditioned on survival until the last measurement based on the joint survival distribution. The light-colored ribbons represent the 95% quantile of the posterior predictions while the line represents the median. To create the posterior predictions the above `Turing.jl` model was used. \label{fig:ind_pred}](individual_prediction.svg){ width=80% }
 
 
 
