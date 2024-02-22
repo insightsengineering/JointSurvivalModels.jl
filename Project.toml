@@ -1,7 +1,7 @@
-name = "JointModels"
+name = "JointSurvivalModels"
 uuid = "54f05ff3-c196-4f1a-acfd-0c2b8e4405db"
 authors = ["Yannik Ammann <ammanny@roche.com>"]
-version = "0.2.2"
+version = "1.0.0"
 
 [deps]
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
@@ -9,3 +9,10 @@ Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Integrals = "de52edbc-65ea-441a-8357-d3a637375a31"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
+
+[compat]
+julia = "1"
+DifferentialEquations = "7"
+Distributions = "0.25"
+Integrals = "4"
+Roots = "2"

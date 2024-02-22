@@ -12,7 +12,7 @@ struct LogLogistic <: HazardBasedDistribution
     β::Real
 end
 
-function JointModels.hazard(dist::LogLogistic, t::Real)
+function JointSurvivalModels.hazard(dist::LogLogistic, t::Real)
     α, β  = dist.α, dist.β
     return ((β / α) * (t / α) ^ (β - 1)) / (1 + (t / α) ^ β)
 end
@@ -35,7 +35,7 @@ When sampling with `rand` an ODE is solved over the support.
 # Usage
 You should adjust the support according to your data
 ```julia
-JointModels.support(dist:HazardBasedDistribution) = (-100, 1000)
+JointSurvivalModels.support(dist:HazardBasedDistribution) = (-100, 1000)
 ```
 """
 support(dist::HazardBasedDistribution) = (1e-4, 10_000)

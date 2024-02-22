@@ -32,15 +32,15 @@ h(t) &= h_0(t) \exp\left(\gamma' \cdot L(M(t)) + \beta' \cdot x\right)\\
      &= h_0(t) \exp\left(\sum_{j\in [k]}\gamma_{j} l_j(m_{j}(t)) + \sum_{j\in [l]} x_j  \beta_j  \right),
 \end{align*}
 ```
-which is implemented in `JointModel`:
+which is implemented in `JointSurvivalModel`:
 
 
 ```@docs
-JointModels.JointModel
+JointSurvivalModels.JointSurvivalModel
 ```
 
 Its hazard is calculated by:
 
 ```@docs
-JointModels.hazard(jm::JointModel, t::Real)
+JointSurvivalModels.hazard(jm::JointSurvivalModel, t::Real)
 ```
