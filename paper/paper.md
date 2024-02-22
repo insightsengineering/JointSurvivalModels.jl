@@ -1,5 +1,5 @@
 ---
-title: 'JointSurvivalModels.jl: Numeric approach to joint models'
+title: 'JointSurvivalModels.jl: A Julia package for general Bayesian joint models'
 tags:
   - Survival analysis
   - Nonlinear
