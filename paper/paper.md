@@ -1,5 +1,5 @@
 ---
-title: 'JointSurvivalModels.jl: A Julia package for general Bayesian joint models'
+title: 'JointSurvivalModels.jl: A Julia package for Bayesian joint modeling of survival and longitudinal data''
 tags:
   - Survival analysis
   - Nonlinear
