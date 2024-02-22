@@ -17,15 +17,16 @@ The `GeneralJointModel` implements a canonical formulation of a joint models. It
 The hazard of the exponential distribution $\text{Exp}(\alpha)$ is the constant function $x\mapsto \alpha$. For the joint longitudinal model we use a simple cosinus function. The joint hazard is then $h(t) = \alpha \exp(\gamma * \cos(t))$.
 
 ```julia
-constant_alpha(x) = 2
-γ = 0.01
-jm = GeneralJointModel(constant_alpha, γ, cos)
+using JointSurvivalModels
+constant_alpha(x) = 0.2
+γ = 0.5
+jm = JointSurvivalModel(constant_alpha, γ, cos)
 ```
 Plotting the survival function vs the baseline hazard:
 ```julia
-using StatsPlot
-r = range(0,2,100)
-plot(r, ccdf(Explonential(1/2), r), label="Baseline survival")
+using StatsPlots, Distributions
+r = range(0,12,100)
+plot(r, ccdf(Exponential(1/0.2), r), label="Baseline survival")
 plot!(r, ccdf(jm, r), label="Joint Survival")
 ```
 
