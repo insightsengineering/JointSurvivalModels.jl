@@ -1,5 +1,5 @@
 using Test
-using JointModels
+using JointSurvivalModels
 using Distributions
 using HypothesisTests
 
@@ -14,7 +14,7 @@ using HypothesisTests
         θ
     end
 
-    function JointModels.hazard(dist::HazardWeibull, t::Real)
+    function JointSurvivalModels.hazard(dist::HazardWeibull, t::Real)
         α, θ  = dist.α, dist.θ
         return α / θ * (t / θ)^(α - 1)
     end
@@ -37,13 +37,13 @@ end
 
 @testset "Joint Model interface tests" begin
     # jm1 tests constructor for non array arguments
-    jm1 = JointModel(identity, 0.01, identity, 0.02, 3)
+    jm1 = JointSurvivalModel(identity, 0.01, identity, 0.02, 3)
     hazard1(t) = identity(t) * exp(0.01 * identity(t) +  0.02 * 3) 
     # jm2 tests constructor with no covariates
-    jm2 = JointModel(identity, 0.01, identity)
+    jm2 = JointSurvivalModel(identity, 0.01, identity)
     hazard2(t) = identity(t) * exp(0.01 * identity(t))
     # jm3 tests multiple longitudinal models and and covariates
-    jm3 = JointModel(identity,
+    jm3 = JointSurvivalModel(identity,
                             [0.01,-0.02,0.03],
                             [x -> sqrt(x), x -> sin(x)+1, x -> cos(x)^2],
                             [2, 0.3],
@@ -61,13 +61,13 @@ end
 
 @testset "Joint Model interface tests" begin
     # jm1 tests constructor for non array arguments
-    jm1 = JointModel(identity, 0.01, identity, 0.02, 3)
+    jm1 = JointSurvivalModel(identity, 0.01, identity, 0.02, 3)
     hazard1(t) = identity(t) * exp(0.01 * identity(t) +  0.02 * 3) 
     # jm2 tests constructor with no covariates
-    jm2 = JointModel(identity, 0.01, identity)
+    jm2 = JointSurvivalModel(identity, 0.01, identity)
     hazard2(t) = identity(t) * exp(0.01 * identity(t))
     # jm3 tests multiple longitudinal models and and covariates
-    jm3 = JointModel(identity,
+    jm3 = JointSurvivalModel(identity,
                             [0.01,-0.02,0.03],
                             [x -> sqrt(x), x -> sin(x)+1, x -> cos(x)^2],
                             [2, 0.3],

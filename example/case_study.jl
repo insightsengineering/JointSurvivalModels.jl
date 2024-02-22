@@ -1,4 +1,4 @@
-using JointModels
+using JointSurvivalModels
 using Turing, Distributions, StatsPlots, CSV, DataFrames, Survival
 using ReverseDiff
 using LogExpFunctions: logit
@@ -110,10 +110,9 @@ h_0(t, λ) = 1/λ
         id = Int(surv_ids[i])
         id_link(t) = sld(t, Ψ[id], tx)
         censoring = Bool(surv_event[id]) ? Inf : surv_times[id]
-        # here we use the JointModel
+        # here we use the JointSurvivalModel
         try
-            surv_times[i] ~
-                censored(JointModel(baseline_hazard, γ, id_link), upper = censoring)
+            surv_times[i] ~ censored(JointSurvivalModel(baseline_hazard, β, id_link), upper = censoring)
         catch
         end
     end

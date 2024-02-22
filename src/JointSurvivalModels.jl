@@ -1,4 +1,4 @@
-module JointModels
+module JointSurvivalModels
 
 using Distributions
 using Integrals: IntegralProblem, solve, QuadGKJL
@@ -18,10 +18,10 @@ export
     cdf,
     ccdf,
     rand,
-    JointModel
+    JointSurvivalModel
 
 
 include("hazarddistribution.jl")
-include("jointmodel.jl")
+include("jointsurvivalmodel.jl")
 
-end # module JointModels
+end # module JointSurvivalModels
