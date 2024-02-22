@@ -209,7 +209,8 @@ With this information, a Bayesian model can be specified in `Turing.jl` [@Turing
         id_link(t) = sld(t, Ψ[id], tx)
         censoring = Bool(surv_event[id]) ? Inf : surv_times[id]
         # here we use the JointSurvivalModel
-        surv_times[i] ~ censored(JointSurvivalModel(baseline_hazard, γ, id_link), upper = censoring)
+        surv_times[i] ~
+            censored(JointSurvivalModel(baseline_hazard, γ, id_link), upper = censoring)
     end
 end
 ```
