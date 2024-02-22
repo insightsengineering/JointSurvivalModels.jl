@@ -145,9 +145,9 @@ identity_link_chn = sample(identity_link_model, NUTS(50, 0.9, max_depth = 8), 10
 # --------------------------------------------------------------
 
 # posterior
-para_names = [:μ_BSLD, :μ_d, :μ_g, :μ_φ, :σ, :κ, :λ, :β]
-display(identity_link_chn[para_names])
-plot(identity_link_chn[para_names])
+param_names = [:μ_BSLD, :μ_d, :μ_g, :μ_φ, :σ, :κ, :λ, :β]
+display(identity_link_chn[param_names])
+plot(identity_link_chn[param_names])
 
 
 # individual predictions
