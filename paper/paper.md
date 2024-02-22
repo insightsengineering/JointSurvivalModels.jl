@@ -1,5 +1,5 @@
 ---
-title: 'JointModels.jl: A Julia package for general Bayesian joint models'
+title: 'JointSurvivalModels.jl: A Julia package for general Bayesian joint models'
 tags:
   - Survival analysis
   - Nonlinear
@@ -29,7 +29,7 @@ bibliography: paper.bib
 ---
 
 # Summary
-`JointModels.jl` implements a numerical approach to define a distribution based on the hazard function. In particular, this provides a mechanism for defining joint models of time-to-event data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation can generate samples of joint models. This allows its use in simulations and predictions, which are common in Bayesian workflows [@BayesianWorkflow].
+`JointSurvivalModels.jl` implements a numerical approach to define a distribution based on the hazard function. In particular, this provides a mechanism for defining joint models of time-to-event data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation can generate samples of joint models. This allows its use in simulations and predictions, which are common in Bayesian workflows [@BayesianWorkflow].
 
 
 # Statement of need
@@ -106,7 +106,7 @@ $$\log( L(t_{ij},y_{ij} | \theta_L)) = \log(p_{m_i(t_{ij})}(y_{ij}))$$
 
 # Example
 
-The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models using `JointModels.jl`. The code can be found in the [example](https://github.com/insightsengineering/JointModels.jl/tree/main/example) folder in the project repository. Following @Kerioui2020 a longitudinal model for the sum of longest diameters $\text{SLD}: \mathbb{R} \to \mathbb{R}_{\geq 0}$ is specified with parameters  $\Psi = (\text{BSLD}, g, d, \phi)$ where $\text{BSLD}, g, d \in \mathbb{R}_{\geq 0},\; \phi \in [0,1]$ and start of treatment $t_x$
+The following example showcases the simplicity and similarity to the mathematical description of the model that is achieved for the modeling of non-linear joint models using `JointSurvivalModels.jl`. The code can be found in the [example](https://github.com/insightsengineering/JointSurvivalModels.jl/tree/main/example) folder in the project repository. Following @Kerioui2020 a longitudinal model for the sum of longest diameters $\text{SLD}: \mathbb{R} \to \mathbb{R}_{\geq 0}$ is specified with parameters  $\Psi = (\text{BSLD}, g, d, \phi)$ where $\text{BSLD}, g, d \in \mathbb{R}_{\geq 0},\; \phi \in [0,1]$ and start of treatment $t_x$
 
 $$\text{SLD}(t,\Psi) = \begin{cases}
     \text{BSLD}\exp(gt) & t < t_x \\
@@ -139,12 +139,12 @@ $$h_i(t) = h_0(t) \exp(\gamma \cdot L(M_i(t))) = h_0(t) \exp(\gamma * \text{id}(
 
 The identity $id$ was used as a link. In code, the distribution of the joint model defined by this hazard is given by:
 ```julia
-my_jm(λ, γ, Ψ_i, tx) = JointModel(t -> h_0(t, λ), γ, t -> sld(t, Ψ_i, tx))
+my_jm(λ, γ, Ψ_i, tx) = JointSurvivalModel(t -> h_0(t, λ), γ, t -> sld(t, Ψ_i, tx))
 ```
 
 The mixed effects model contains population parameters $\mu = (\mu_{\text{BSLD}},\mu_d, \mu_g, \mu_\phi)$ and random effects $\eta_i = (\eta_{\text{BSLD},i},\eta_{d,i}, \eta_{g,i}, \eta_{\phi,i})$ which are normally distributed around zero $\eta_i \sim N(0, \Omega), \Omega = \text{diag}(\omega_{\text{BSLD}}^2,\omega_d^2, \omega_g^2, \omega_\phi^2)$. For $\text{BSLD}, g, d$ a log-normal transform $\log(\Psi_{q,i}) = log (\mu_q) + \eta_{q,i},\, q\in \{\text{BSLD}, g, d\}$ was used while for $\phi$ a logit transform $\text{logit}(\Psi_{\phi,1}) = \text{logit}(\mu_\phi) + \eta_{\phi,1}$ was used.
 
-With this information, a Bayesian model can be specified in `Turing.jl` [@Turing.jl] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the `JointModel` is used. This results in a canonical translation of the statistical ideas into code. For longitudinal data, a multiplicative error model is used using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from @Kerioui2020 can be implemented as follows in code:
+With this information, a Bayesian model can be specified in `Turing.jl` [@Turing.jl] by giving prior distributions for the parameters and calculations for the likelihood. To calculate the likelihood of the survival time and event indicator the `JointSurvivalModel` is used. This results in a canonical translation of the statistical ideas into code. For longitudinal data, a multiplicative error model is used using $e_{ij} \sim N(0, \sigma^2)$ given by $y_{ij} = \text{SLD}(t_{ij},\Psi_i)(1+e_{ij})$ is used. The model and prior setup from @Kerioui2020 can be implemented as follows in code:
 
 ```julia
 @model function identity_link(
@@ -208,16 +208,16 @@ With this information, a Bayesian model can be specified in `Turing.jl` [@Turing
         id = Int(surv_ids[i])
         id_link(t) = sld(t, Ψ[id], tx)
         censoring = Bool(surv_event[id]) ? Inf : surv_times[id]
-        # here we use the JointModel
+        # here we use the JointSurvivalModel
         try
             surv_times[i] ~
-                censored(JointModel(baseline_hazard, γ, id_link), upper = censoring)
+                censored(JointSurvivalModel(baseline_hazard, γ, id_link), upper = censoring)
         catch
         end
     end
 end
 ```
-When sampling the posterior the log probability density function `logpdf` implemented in `JointModels.jl` is called for a distribution given specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Sampling with the `Turing.Inference.NUTS` algorithm 2'000 posterior samples using 1'000 burn-in samples results in posterior statistic:
+When sampling the posterior the log probability density function `logpdf` implemented in `JointSurvivalModels.jl` is called for a distribution given specific parameters. The numerical calculation of the likelihood is then used in the sampling process. Sampling with the `Turing.Inference.NUTS` algorithm 2'000 posterior samples using 1'000 burn-in samples results in posterior statistic:
 
 ```
 parameters        mean        std      mcse       rhat  |  ture_parameters    
@@ -234,7 +234,7 @@ parameters        mean        std      mcse       rhat  |  ture_parameters
 Notice that the link coefficient $\gamma$ was sampled around the true value $0.01$ with a small variance. The survival and population parameters are well represented by the posterior samples indicated by the $\hat r$ value close to one and the relative closeness of the mean to the true parameter.
 
 
-Additionally, `JointModels.jl` implements the generation of random samples of a joint distribution. This allows the creation of posterior predictive checks, simulations, or individual predictions \autoref{fig:ind_pred} using `Turing.jl`, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
+Additionally, `JointSurvivalModels.jl` implements the generation of random samples of a joint distribution. This allows the creation of posterior predictive checks, simulations, or individual predictions \autoref{fig:ind_pred} using `Turing.jl`, which are a major step in a Bayesian workflow when validating a model [@BayesianWorkflow]. 
 
 ![The figure showcases individual posterior prediction for the mixed effects longitudinal sub-model alongside the longitudinal observations. The figure also shows the individual survival predictions conditioned on survival until the last measurement based on the joint survival distribution. The light-colored ribbons represent the 95% quantile of the posterior predictions while the line represents the median. To create the posterior predictions the above `Turing.jl` model was used. \label{fig:ind_pred}](individual_prediction.svg){ width=80% }
 
