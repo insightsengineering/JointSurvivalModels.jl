@@ -242,7 +242,7 @@ Additionally, `JointSurvivalModels.jl` implements the generation of random sampl
 
 # Acknowledgements
 
-This software was initially developed at Hoffmann-La Roche Ltd. before transitioning into an open source project. Professor Peter Bühlmann from ETH Zürich facilitated the development and open source project.
+This software was initially developed at Hoffmann-La Roche Ltd. before transitioning into an open source project. Professor Peter Bühlmann from ETH Zurich facilitated the development and open source project.
 
 
 # References

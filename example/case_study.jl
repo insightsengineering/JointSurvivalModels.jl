@@ -136,7 +136,7 @@ init_params = (
 
 
 identity_link_model = identity_link(longit_id, longit_time, longit_sld, surv_id, surv_time, surv_indicator)
-identity_link_chn = sample(identity_link_model, NUTS(50, 0.9, max_depth = 8), 100, init_params=init_params)
+identity_link_chain = sample(identity_link_model, NUTS(50, 0.9, max_depth = 8), 100, init_params=init_params)
 # more samples
 # identity_link_chn = sample(identity_link_model, NUTS(1000, 0.9, max_depth = 8), 2000, init_params=init_params)
 
