@@ -137,7 +137,7 @@ In the mixed effects model every individual $i$ has a different mixed effects pa
 
 $$h_i(t) = h_0(t) \exp(\gamma \cdot L(M_i(t))) = h_0(t) \exp(\gamma * \text{id}(\text{SLD}(t, \Psi_i))).$$
 
-The identity $id$ was used as a link. In code, the distribution of the joint model defined by this hazard is given by:
+The identity $\text{id}$ was used as a link. In code, the distribution of the joint model defined by this hazard is given by:
 ```julia
 my_jm(λ, γ, Ψ_i, tx) = JointSurvivalModel(t -> h_0(t, λ), γ, t -> sld(t, Ψ_i, tx))
 ```
