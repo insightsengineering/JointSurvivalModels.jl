@@ -193,14 +193,14 @@ With this information, a Bayesian model can be specified in `Turing.jl` [@Turing
     γ ~ truncated(Normal(0, 0.5), -0.1, 0.1)
     # ---------------- Likelihoods -----------------
     # add the likelihood of the longitudinal process
-    for data in 1:m
-        id = Int(longit_ids[data])
-        meas_time = longit_times[data]
+    for ij in 1:m
+        id = Int(longit_ids[ij])
+        meas_time = longit_times[ij]
         sld_prediction = sld(meas_time, Ψ[id], tx)
         if isnan(sld_prediction) || sld_prediction < 0
             sld_prediction = 0
         end
-        longit_measurements[data] ~ Normal(sld_prediction, sld_prediction * σ)
+        longit_measurements[ij] ~ Normal(sld_prediction, sld_prediction * σ)
     end
     # add the likelihood of the survival model with link
     baseline_hazard(t) = h_0(t, λ)
