@@ -21,4 +21,12 @@ constant_alpha(x) = 2
 jm = JointSurvivalModel(constant_alpha, γ, cos)
 ```
 
-For the numeric calculation for the distribution a default support (0,10'000) is assumed. In particular the first events happen after $0$ and the interval (0,10'000) should contain nearly all of the probability mass of the target distribution. If you have different starting times for events or a time horizon that exceeds 10'000 then you can manually adjust the support, see [support in `HazardBasedDistribution`](@ref HazardBasedDistribution)
+### Support
+
+### Support
+
+For the numeric calculation for the distribution a default support (0.001,10'000) is set. In particular the first events happen after $0$ and the interval (0,10'000) should contain nearly all of the probability mass of the target distribution. If you have different starting times for events or a time horizon that is lower or higher than 10'000 then you should manually adjust the support, see [support in `HazardBasedDistribution`](@ref HazardBasedDistribution). For example:
+
+```julia
+JointSurvivalModels.support(dist::HazardBasedDistribution) = (-100, 100)
+```
