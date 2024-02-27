@@ -138,7 +138,7 @@ init_params = (
 identity_link_model = identity_link(longit_id, longit_time, longit_sld, surv_id, surv_time, surv_indicator)
 identity_link_chain = sample(identity_link_model, NUTS(50, 0.9, max_depth = 8), 100, init_params=init_params)
 # more samples
-# identity_link_chn = sample(identity_link_model, NUTS(1000, 0.9, max_depth = 8), 2000, init_params=init_params)
+# identity_link_chain = sample(identity_link_model, NUTS(1000, 0.9, max_depth = 8), 2000, init_params=init_params)
 
 # --------------------------------------------------------------
 # diagnostics
@@ -146,8 +146,8 @@ identity_link_chain = sample(identity_link_model, NUTS(50, 0.9, max_depth = 8), 
 
 # posterior
 param_names = [:μ_BSLD, :μ_d, :μ_g, :μ_φ, :σ, :κ, :λ, :β]
-display(identity_link_chn[param_names])
-plot(identity_link_chn[param_names])
+display(identity_link_chain[param_names])
+plot(identity_link_chain[param_names])
 
 
 # individual predictions
@@ -199,7 +199,7 @@ pred_model = identity_link(sld_id, sld_timepoints, sld_pred, s_id, s_time, s_eve
 
 # Predict using zero $\sigma$
 
-prediction_chn = predict(pred_model, identity_link_chn)
+prediction_chn = predict(pred_model, identity_link_chain)
 #Plotting longitudinal PPC
 
 chn_longit = group(prediction_chn, :longit_measurements)
