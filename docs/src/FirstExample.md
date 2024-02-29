@@ -191,14 +191,14 @@ This implementation of joint models can also be used for maximum likelihood opti
 using Optim
 
 function loglikelihood(args)
-    likelihood = 0
+    result = 0
     m(i) = t -> parametric_m_i(t, i, a, b)
     h_0(t) = parametric_h_0(t, args[1], args[2])
     joint_models = [JointSurvivalModel(h_0, args[3], m(i)) for i in 1:n]
     for i in 1:length(T)
-        likelihood += logpdf(censored(joint_models[i], upper = 50 + Δ[i]), T[i])
+        result += logpdf(censored(joint_models[i], upper = 50 + Δ[i]), T[i])
     end
-    return likelihood
+    return result
 end
 minprob(args) = - loglikelihood(args)
 
