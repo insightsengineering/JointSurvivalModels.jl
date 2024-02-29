@@ -35,7 +35,7 @@ When sampling with `rand` an ODE is solved over the support.
 # Usage
 You should adjust the support according to your data
 ```julia
-JointSurvivalModels.support(dist:HazardBasedDistribution) = (-100, 1000)
+JointSurvivalModels.support(dist::HazardBasedDistribution) = (-100, 1000)
 ```
 """
 support(dist::HazardBasedDistribution) = (1e-4, 10_000)

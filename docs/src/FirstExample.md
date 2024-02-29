@@ -67,12 +67,22 @@ plot!(sm, r, t-> ccdf(Weibull(1.2,100),t), label = "Baseline survival", color = 
 ```
 ![](fig/sm.png)
 
+
+Now we have to specify the support of our joint model. Currently this has to be done by hand. This is used to control the time-points in which we expect observations and is used for numerical procedures. So taking a support that is too big can lead to instabilities. If you redo the plot above with the time range 0 to 500 you will see that the individual survival curves "reaches" 0 around time 100 and the baseline survival "reaches" 0 before time 400.
+```julia
+JointSurvivalModels.support(dist::JointSurvivalModel) = (0.001, 500)
+```
+
+
 To simulate longitudinal measurements ``y_{ij}`` for individual ``i`` at time ``t_ij`` we assume a multiplicative error ``y_{ij} \sim N(m_i(t_{ij}), \sigma * m_i(t_{ij}) ), \sigma = 0.15``. Simulate ``9`` longitudinal measurements and survival times for each individual:
 ```julia
 σ = 0.15
 t_m = range(1,50,9)
 Y = [[rand(Normal(m(i)(t_m[j]), σ * m(i)(t_m[j]))) for j in 1:9] for i in 1:n]
-T = [rand(jm) for jm in joint_models]
+```
+Simulate joint survival times:
+```julia
+T = rand.(joint_models)
 ```
 Additionally we assume right-censoring at ``50`` and no measurements after an event:
 ```julia
