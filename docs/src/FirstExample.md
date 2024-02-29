@@ -186,7 +186,7 @@ joint_model_chn = sample(example_joint_model(Y, t_m, T, Δ), NUTS(), 100)
 ```
 
 ## Maximum Likelihood
-This implementation of joint models can also be used for maximum likelihood optimizations. The `Optim.jl` package contains many different optimizers that can be used to find parameters of your model. Here is an example of finding the parameters of the baseline hazard and link coefficient:
+This implementation of joint models can also be used for maximum likelihood optimizations. The `Optim.jl` package contains many different optimizers that can be used to find parameters of your model. Here is an example of finding the parameters of the baseline hazard and link coefficient, while keeping the longitudinal parameters fixed:
 ```julia
 using Optim
 
