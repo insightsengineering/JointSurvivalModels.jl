@@ -147,7 +147,7 @@ Now a two step joint model, where we use the posterior mean of the population an
     end
 end
 # using previously sampled posterior for longitudinal process
-two_step_chn = sample(example_survival(Y, t_m, T, Δ, a_hat, b_hat), NUTS(), 100)
+two_step_chn = sample(example_two_step(Y, t_m, T, Δ, a_hat, b_hat), NUTS(), 100)
 
 ```
 Finally a joint model where the posterior of the longitudinal and joint survival model are sampled simultaneously.
@@ -184,6 +184,28 @@ end
 
 joint_model_chn = sample(example_joint_model(Y, t_m, T, Δ), NUTS(), 100)
 ```
+
+## Maximum Likelihood
+This implementation of joint models can also be used for maximum likelihood optimizations. The `Optim.jl` package contains many different optimizers that can be used to find parameters of your model. Here is an example of finding the parameters of the baseline hazard and link coefficient, while keeping the longitudinal parameters fixed:
+```julia
+using Optim
+
+function loglikelihood(args)
+    result = 0
+    m(i) = t -> parametric_m_i(t, i, a, b)
+    h_0(t) = parametric_h_0(t, args[1], args[2])
+    joint_models = [JointSurvivalModel(h_0, args[3], m(i)) for i in 1:n]
+    for i in 1:length(T)
+        result += logpdf(censored(joint_models[i], upper = 50 + Δ[i]), T[i])
+    end
+    return result
+end
+minprob(args) = - loglikelihood(args)
+
+res = optimize(minprob, [1,100,0.0]) # res.minimizer = 0.5616, 67.0875,  0.0513
+```
+
+There is also an interface for MLE and MAP estimations using `Turing.jl` which can be found [here](https://turing.ml/dev/docs/using-turing/guide#maximum-likelihood-and-maximum-a-posterior-estimates). In this specific example the Turing interface does not work, since the Weibull density is not defined for theta equals 0.
 
 
 ## Link functions
