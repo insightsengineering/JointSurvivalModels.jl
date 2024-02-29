@@ -118,7 +118,7 @@ Turing.setrdcache(true)
     end
 end
 
-longitudinal_chn = sample(example_longitudinal(Y, t_m), NUTS(; adtype=AutoReverseDiff(false)), 200)
+longitudinal_chn = sample(example_longitudinal(Y, t_m), NUTS(), 200)
 posterior_means = summarize(longitudinal_chn)[:,2]
 a_hat = posterior_means[1:n]
 b_hat = posterior_means[101]
