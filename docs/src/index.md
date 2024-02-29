@@ -29,7 +29,7 @@ plot(r, ccdf(Exponential(1/0.2), r), label="Baseline survival")
 plot!(r, ccdf(jm, r), label="Joint Survival")
 ```
 
-For a more instructive example take a look at the documentation [`First Example`](@ref FirstExample) or the case study found in `example/` in the project folder.
+For a more instructive example take a look at the documentation [First Example](@ref) or the case study found in `example/` in the project folder.
 
 
 
