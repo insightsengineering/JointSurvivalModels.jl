@@ -91,7 +91,7 @@ Let $\theta_H$ describe the parameters for the baseline hazard, $\theta_J$ for t
 
 $$\log L(Y | (\theta_H, \theta_J, \theta_L)) = \sum_{i=1}^{n} \log ( L((\tau_i, \delta_i) |  (\theta_H, \theta_J, \theta_L))) +  \sum_{i = 1}^{n}\sum_{ j=1}^{n_i} \log( L(t_{ij},y_{ij} | \theta_L) )$$
 
-For individual $i$ let $f_i$ be the joint probability density function and $S_i$ the survival function. The likelihood depends on the censoring process, for example for right-censored measurements $(\tau_i, \delta_i)$ is given by
+For individual $i$ let $f_i$ be the joint probability density function and $h_i$ the joint hazard function. The likelihood depends on the censoring process, for example for right-censored measurements $(\tau_i, \delta_i)$ is given by
 
 $$\log ( L((\tau_i, \delta_i) |  (\theta_H, \theta_J, \theta_L))) = \delta_i \log(f_i(\tau_i)) - (1-\delta_i)\int_0^{\tau_i} h_i(u) \,du$$
 
