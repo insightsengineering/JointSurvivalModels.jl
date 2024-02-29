@@ -1,27 +1,37 @@
 # JointSurvivalModels.jl
 
-This package implements joint models in julia. It was designed to support the modeling of joint models with probabilistic programming, for example using the Turing.jl framework. Install it with:
+This package implements joint models in Julia. It was designed to support the modeling of joint models with probabilistic programming, for example using the [Turing.jl](https://github.com/TuringLang/Turing.jl) framework. Install it with:
+
 ```julia
 using Pkg
-# needs public listing
-#Pkg.add("JointSurvivalModels")
+Pkg.add("JointSurvivalModels")
 ```
-
 
 The `JointSurvivalModel` type implements a canonical formulation of joint models. It based on a joint hazard function $h(t) = h_0(t) \exp(\gamma' \cdot L(M(t)))$ with a baseline hazard $h_0$ and a link to joint models $L(M(t))$ and coefficients for the links $\gamma$. For a more detailed explanation see [`JointSurvivalModels`](@ref JointSurvivalModel).
 
 
-### A simple example
 
-The hazard of the exponential distribution $Exp(\alpha)$ is the constant function $x\mapsto \alpha$. For the joint longitudinal model we use a simple cosinus function. The joint hazard is then $h(t) = \alpha \exp(\gamma * \cos(t))$.
+## Example
+
+The hazard of the exponential distribution $\text{Exp}(\alpha)$ is the constant function $x\mapsto \alpha$. For the joint longitudinal model we use a simple cosinus function. The joint hazard is then $h(t) = \alpha \exp(\gamma * \cos(t))$.
 
 ```julia
-constant_alpha(x) = 2
-γ = 0.01
+using JointSurvivalModels
+constant_alpha(x) = 0.2
+γ = 0.5
 jm = JointSurvivalModel(constant_alpha, γ, cos)
 ```
+Plotting the survival function vs the baseline hazard:
+```julia
+using StatsPlots, Distributions
+r = range(0,12,100)
+plot(r, ccdf(Exponential(1/0.2), r), label="Baseline survival")
+plot!(r, ccdf(jm, r), label="Joint Survival")
+```
 
-### Support
+For a more instructive example take a look at the documentation [`First Example`](@ref FirstExample) or the case study found in `example/` in the project folder.
+
+
 
 ### Support
 
