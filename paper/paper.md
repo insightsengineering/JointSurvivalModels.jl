@@ -29,7 +29,7 @@ bibliography: paper.bib
 ---
 
 # Summary
-`JointSurvivalModels.jl` implements a numerical approach to define a distribution based on the hazard function. In particular, this provides a mechanism for defining joint models of time-to-event data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated, allowing Bayesian inference frameworks to sample the posterior distribution of the model's parameters. Additionally, this implementation can generate samples of joint models. This allows its use in simulations and predictions, which are common in Bayesian workflows [@BayesianWorkflow].
+`JointSurvivalModels.jl` implements a numerical approach to define a distribution based on the hazard function. In particular, this provides a mechanism for defining joint models of time-to-event data and longitudinal measurements. Using numerical integration, the likelihood of events can be calculated. This allows Bayesian inference frameworks to sample the posterior distribution of the model's parameters or optimization frameworks to find parameters that maximize the likelihood. Additionally, this implementation can generate samples of joint models. This allows its use in simulations and predictions, which are common in Bayesian workflows [@BayesianWorkflow].
 
 
 # Statement of need
